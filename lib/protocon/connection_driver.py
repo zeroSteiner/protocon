@@ -37,5 +37,11 @@ class ConnectionDriver(object):
 	def recv_timeout(self, timeout):
 		raise NotImplementedError()
 
+	def recv_until(self, terminator):
+		data = self.recv_size(len(terminator))
+		while not data.endswith(terminator):
+			data += self.recv_size(1)
+		return data
+
 	def send(self, data):
 		raise NotImplementedError()

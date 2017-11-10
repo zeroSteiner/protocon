@@ -24,6 +24,7 @@
 
 import ast
 import binascii
+import collections
 import datetime
 import os
 import re
@@ -80,16 +81,18 @@ def print_status(message, *args, **kwargs):
 
 class Engine(object):
 	comment = '#'
+	_History = collections.namedtuple('History', ('command', 'rx', 'tx'))
 	def __init__(self, connection):
 		self.connection = connection
 		self.variables = {
 			'crc': 'CRC_CCITT',
-			'encoding': 'utf-8',
+			'encoding': 'hex',
 			'print-recv': True,
 			'print-send': True
 		}
 		print_good("initialized protocon engine v{0} at {1:%Y-%m-%d %H:%M:%S}".format(__version__, datetime.datetime.now()))
 		print_good('connected to: ' + connection.url.to_text())
+		self.history = self._History(command=collections.deque(), rx=collections.deque(), tx=collections.deque())
 
 	def _cmd_close(self, arguments):
 		self.connection.close()
@@ -108,13 +111,28 @@ class Engine(object):
 		print_status(arguments)
 		return True
 
+	def _cmd_recv_size(self, arguments):
+		size = ast.literal_eval(arguments) if arguments else None
+		if not isinstance(size, int):
+			print_error('command error: recv-size must specify a valid size')
+			return False
+		self._process_recv(self.connection.recv_size(size))
+		return True
+
 	def _cmd_recv_time(self, arguments):
 		timeout = ast.literal_eval(arguments) if arguments else None
-		if not isinstance(timeout, int):
+		if not isinstance(timeout, (float, int)):
 			print_error('command error: recv-time must specify a valid timeout')
 			return False
 		self._process_recv(self.connection.recv_timeout(timeout))
 		return True
+
+	def _cmd_recv_until(self, arguments):
+		terminator = self.decode(arguments)
+		if not terminator:
+			print_error('command error: recv-until must specify a valid terminator')
+			return None
+		self._process_recv(self.connection.recv_until(terminator))
 
 	def _cmd_send(self, arguments):
 		data = self.decode(arguments)
@@ -127,12 +145,14 @@ class Engine(object):
 		return "0x{value:0{width:}x}".format(value=algo.calc_bytes(data), width=algo.width // 4)
 
 	def _process_send(self, data):
+		self.history.tx.append(data)
 		print_status("TX: {0: 6} bytes (CRC: {1})".format(len(data), self._crc_string(data)))
 		if not self.variables['print-send']:
 			return
 		print_hexdump(data)
 
 	def _process_recv(self, data):
+		self.history.rx.append(data)
 		print_status("RX: {0: 6} bytes (CRC: {1})".format(len(data), self._crc_string(data)))
 		if not self.variables['print-recv']:
 			return
@@ -160,10 +180,14 @@ class Engine(object):
 		command = command.strip()
 		if command.startswith(self.comment):
 			return True
+		original_command = command
 		command, argument = command.split(':', 1)
 		command = command.strip().lower()
 		handler = getattr(self, '_cmd_' + command.replace('-', '_'), None)
 		if handler is None:
 			print_error('unknown command: ' + command)
 			return False
-		return handler(argument.strip())
+		result = handler(argument.strip())
+		if result:
+			self.history.command.append(original_command)
+		return result
