@@ -23,22 +23,17 @@
 #
 
 import argparse
-import ast
-import binascii
-import datetime
+import functools
 import os
-import re
-import select
-import socket
 import sys
-import time
 
 import boltons.iterutils
 import boltons.urlutils
-import crcelk
-import termcolor
 
-__version__ = '1.0'
+get_path = functools.partial(os.path.join, os.path.abspath(os.path.dirname(__file__)))
+sys.path.append(get_path('lib'))
+
+import protocon
 
 _net_attributes = ('host', 'port',)
 SCHEMES = {
@@ -52,171 +47,9 @@ SCHEMES = {
 }
 del _net_attributes
 
-def print_hexdump(data, base=0, stream=None, encoding='utf-8'):
-	if not stream:
-		stream = sys.stdout
-	if isinstance(data, str):
-		data = data.encode(encoding)
-	data = bytearray(data)
-	l = len(data)
-	i = 0
-	divider = 8
-	chunk_size = 16
-	for row, chunk in enumerate(boltons.iterutils.chunked(data, chunk_size, fill=-1)):
-		offset_col = "{0:04x}".format(row * chunk_size)
-		hex_col = ''
-		for pos, byte in enumerate(chunk):
-			hex_col += '   ' if byte == -1 else "{0:02x} ".format(byte)
-			if pos and pos % divider == 0:
-				hex_col += ' '
-		hex_col = hex_col[:-1]
-		ascii_col = ''
-		for byte in chunk:
-			if byte == -1:
-				ascii_col += ' '
-			elif byte < 32 or byte > 126:
-				ascii_col += '.'
-			else:
-				ascii_col += chr(byte)
-		stream.write('  '.join((offset_col, hex_col, ascii_col)) + os.linesep)
-	stream.flush()
-
-def print_error(message, *args, **kwargs):
-	message = termcolor.colored('[-] ', 'red', attrs=('bold',)) + message
-	print(message, *args, **kwargs)
-
-def print_good(message, *args, **kwargs):
-	message = termcolor.colored('[+] ', 'green', attrs=('bold',)) + message
-	print(message, *args, **kwargs)
-
-def print_status(message, *args, **kwargs):
-	message = termcolor.colored('[*] ', 'blue', attrs=('bold',)) + message
-	print(message, *args, **kwargs)
-
-class Connection(object):
-	def __init__(self, url):
-		self.url = url
-		if url.scheme in ('tcp', 'tcp4'):
-			self._connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-			self._connection.connect((url.host, url.port))
-		elif url.scheme == 'tcp6':
-			self._connection = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
-			self._connection.connect((url.host, url.port))
-		elif url.scheme in ('udp', 'udp4'):
-			self._connection = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-		elif url.scheme == 'udp6':
-			self._connection = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
-
-	def _recv_size(self, size):
-		if self.url.scheme in ('tcp', 'tcp4', 'tcp6'):
-			recv = self._connection.recv
-		elif self.url.scheme in ('udp', 'udp4', 'udp6'):
-			recv = self._connection.recvfrom
-		return recv(size)
-
-	def close(self):
-		if self.url.scheme in ('tcp', 'tcp4', 'tcp6'):
-			self._connection.close()
-
-	def recv_size(self, size):
-		data = b''
-		while len(data) < size:
-			data += self._recv_size(size - len(data))
-		return data
-
-	def recv_timeout(self, timeout):
-		if self.url.scheme in ('tcp', 'tcp4', 'tcp6'):
-			_select = lambda t: select.select([self._connection], [], [], t)[0]
-		elif self.url.scheme in ('udp', 'udp4', 'udp6'):
-			_select = lambda t: select.select([self._connection], [], [], t)[0]
-		remaining = timeout
-		data = b''
-		while remaining > 0:
-			start_time = time.time()
-			if _select(remaining):
-				data += self._recv_size(1)
-			remaining -= time.time() - start_time
-		return data
-
-	def send(self, data):
-		if self.url.scheme in ('tcp', 'tcp4', 'tcp6'):
-			self._connection.send(data)
-		elif self.url.scheme in ('udp', 'udp4', 'udp6'):
-			self._connection.sendto(data, (self.url.host, self.url.port))
-
-class Engine(object):
-	comment = '#'
-	def __init__(self, connection):
-		self.connection = connection
-		self.variables = {
-			'crc': 'CRC_CCITT',
-			'encoding': 'utf-8',
-			'print-recv': True,
-			'print-send': True
-		}
-		print_good("initialized protocon engine v{0} at {1:%Y-%m-%d %H:%M:%S}".format(__version__, datetime.datetime.now()))
-		print_good('connected to: ' + connection.url.to_text())
-
-	def _crc_string(self, data):
-		algo = getattr(crcelk, self.variables['crc'])
-		return "0x{value:0{width:}x}".format(value=algo.calc_bytes(data), width=algo.width // 4)
-
-	def _process_send(self, data):
-		print_status("TX: {0: 6} bytes (CRC: {1})".format(len(data), self._crc_string(data)))
-		if not self.variables['print-send']:
-			return
-		print_hexdump(data)
-
-	def _process_recv(self, data):
-		print_status("RX: {0: 6} bytes (CRC: {1})".format(len(data), self._crc_string(data)))
-		if not self.variables['print-recv']:
-			return
-		print_hexdump(data)
-
-	def decode(self, data, encoding=None):
-		encoding = encoding or self.variables['encoding']
-		encoding = encoding.lower()
-		if encoding in ('utf-8', 'utf-16', 'utf-16be', 'utf-16le', 'utf-32', 'utf-32be', 'utf-32le'):
-			data = data.encode(encoding)
-		elif encoding == 'hex':
-			if len(data) > 2 and re.match(r'^[a-f0-9]{2}[^a-f0-9]', data):
-				data = data.replace(data[3], '')
-			data = binascii.a2b_hex(data)
-		else:
-			raise ValueError('unsupported encoding: ' + encoding)
-		return data
-
-	@classmethod
-	def from_url(cls, url, *args, **kwargs):
-		connection = Connection(url)
-		return cls(connection, *args, **kwargs)
-
-	def run_command(self, command):
-		command = command.strip()
-		if command.startswith(self.comment):
-			return
-		command, argument = command.split(':', 1)
-		command = command.strip().lower()
-		arguments = argument.strip()
-
-		if command == 'close':
-			self.connection.close()
-			print_status('the connection has been closed')
-		elif command == 'recv-time':
-			timeout = ast.literal_eval(arguments) if arguments else None
-			if not isinstance(timeout, int):
-				print_error('command error: recv-time must specify a valid timeout')
-				return False
-			self._process_recv(self.connection.recv_timeout(timeout))
-		elif command == 'send':
-			data = self.decode(arguments)
-			self.connection.send(data)
-			self._process_send(data)
-		return True
-
 def main():
 	parser = argparse.ArgumentParser(description='ProtoCon', conflict_handler='resolve')
-	parser.add_argument('-v', '--version', action='version', version='%(prog)s Version: ' + __version__)
+	parser.add_argument('-v', '--version', action='version', version='%(prog)s Version: ' + protocon.__version__)
 	parser.add_argument('target_url', help='the connection URL')
 	parser.add_argument('script', type=argparse.FileType('r'), help='the script to execute')
 	arguments = parser.parse_args()
@@ -224,14 +57,14 @@ def main():
 	url = boltons.urlutils.URL(arguments.target_url)
 	scheme_attributes = SCHEMES.get(url.scheme)
 	if not scheme_attributes:
-		print_error('unsupported URL scheme: ' + url.scheme)
+		protocon.engine.print_error('unsupported URL scheme: ' + url.scheme)
 		return os.EX_USAGE
 	for attribute in scheme_attributes:
 		if not getattr(url, attribute):
-			print_error('missing URL attribute: ' + attribute)
+			protocon.engine.print_error('missing URL attribute: ' + attribute)
 			return os.EX_USAGE
 
-	engine = Engine.from_url(url)
+	engine = protocon.Engine.from_url(url)
 
 	engine.connection.close()
 	return 0
