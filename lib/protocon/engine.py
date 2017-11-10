@@ -79,6 +79,18 @@ def print_status(message, *args, **kwargs):
 	message = termcolor.colored('[*] ', 'blue', attrs=('bold',)) + message
 	print(message, *args, **kwargs)
 
+def _decodestr_repl(match):
+	match = match.group(1)
+	if match == b'n':
+		return b'\n'
+	elif match == b'r':
+		return b'\r'
+	elif match == b't':
+		return b'\t'
+	elif match[0] == 'x':
+		return bytes.fromhex(match[1:3])
+	raise ValueError('unknown escape sequence: ' + match)
+
 class Engine(object):
 	comment = '#'
 	_History = collections.namedtuple('History', ('command', 'rx', 'tx'))
@@ -86,7 +98,7 @@ class Engine(object):
 		self.connection = connection
 		self.variables = {
 			'crc': 'CRC_CCITT',
-			'encoding': 'hex',
+			'encoding': 'utf-8',
 			'print-recv': True,
 			'print-send': True
 		}
@@ -158,11 +170,17 @@ class Engine(object):
 			return
 		print_hexdump(data)
 
+	@property
+	def commands(self):
+		return tuple(sorted(cmd[5:].replace('_', '-') for cmd in dir(self) if cmd.startswith('_cmd_')))
+
 	def decode(self, data, encoding=None):
 		encoding = encoding or self.variables['encoding']
 		encoding = encoding.lower()
 		if encoding in ('utf-8', 'utf-16', 'utf-16be', 'utf-16le', 'utf-32', 'utf-32be', 'utf-32le'):
 			data = data.encode(encoding)
+			regex = br'(?<!\\)(?:\\\\)*\\([nrt]|x[0-9a-f][0-9a-f])'
+			data = re.sub(regex, _decodestr_repl, data)
 		elif encoding == 'hex':
 			if len(data) > 2 and re.match(r'^[a-f0-9]{2}[^a-f0-9]', data):
 				data = data.replace(data[3], '')

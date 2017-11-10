@@ -55,6 +55,7 @@ def main():
 			continue
 		connection_drivers[plugin] = module.ConnectionDriver
 
+	protocon.engine.print_status("loaded {0} connection drivers".format(len(connection_drivers)))
 	driver = next((driver for driver in connection_drivers.values() if url.scheme in driver.schemes), None)
 	if driver is None:
 		protocon.engine.print_error('no connection driver for scheme: ' + url.scheme)
