@@ -29,6 +29,7 @@ import datetime
 import os
 import re
 import sys
+import time
 
 import boltons.iterutils
 import boltons.urlutils
@@ -38,7 +39,7 @@ import termcolor
 from . import __version__
 from . import connection_driver
 
-def print_hexdump(data, base=0, stream=None, encoding='utf-8'):
+def print_hexdump(data, stream=None, encoding='utf-8'):
 	if not stream:
 		stream = sys.stdout
 	if isinstance(data, str):
@@ -143,13 +144,52 @@ class Engine(object):
 		terminator = self.decode(arguments)
 		if not terminator:
 			print_error('command error: recv-until must specify a valid terminator')
-			return None
+			return False
 		self._process_recv(self.connection.recv_until(terminator))
 
 	def _cmd_send(self, arguments):
 		data = self.decode(arguments)
 		self.connection.send(data)
 		self._process_send(data)
+		return True
+
+	def _cmd_set(self, arguments):
+		if not arguments:
+			print_error('command error: set must specify a valid option to configure')
+			return False
+		if '=' not in arguments:
+			print_error('command error: set must specify a valid option in the format of name=value')
+			return False
+		name, value = arguments.split('=', 1)
+		name = name.strip()
+		value = value.strip()
+		handler = getattr(self, '_set_' + name.replace('-', '_'), None)
+		if handler is None:
+			print_error('command error: set must specify a valid option')
+			return False
+
+		if value.lower() == 'false':
+			value = False
+		elif value.lower() == 'null':
+			value = None
+		elif value.lower() == 'true':
+			value = True
+		elif re.match(r'^0b[01]+$', value):
+			value = int(value[2:], 2)
+		elif re.match(r'^0o[0-7]+$', value):
+			value = int(value[2:], 8)
+		elif re.match(r'^0x[a-fA-F0-9]+$', value):
+			value = int(value[2:], 16)
+		elif re.match(r'^[0-9]+$', value):
+			value = int(value, 10)
+		return handler(value)
+
+	def _cmd_sleep(self, arguments):
+		duration = ast.literal_eval(arguments) if arguments else None
+		if not isinstance(duration, (float, int)):
+			print_error('command error: sleep must specify a valid duration')
+			return False
+		time.sleep(duration)
 		return True
 
 	def _crc_string(self, data):
@@ -170,12 +210,41 @@ class Engine(object):
 			return
 		print_hexdump(data)
 
+	def _set_crc(self, value):
+		if not isinstance(value, str):
+			print_error('value error: crc must be a string')
+			return False
+		self.variables['crc'] = value
+		return True
+
+	def _set_encoding(self, value):
+		if not isinstance(value, str):
+			print_error('value error: encoding must be a string')
+			return False
+		self.variables['encoding'] = value
+		return True
+
+	def _set_print_recv(self, value):
+		if not isinstance(value, bool):
+			print_error('value error: print-recv must be a boolean')
+			return False
+		self.variables['print-recv'] = value
+		return True
+
+	def _set_print_send(self, value):
+		if not isinstance(value, bool):
+			print_error('value error: print-send must be a boolean')
+			return False
+		self.variables['print-send'] = value
+		return True
+
 	@property
 	def commands(self):
 		return tuple(sorted(cmd[5:].replace('_', '-') for cmd in dir(self) if cmd.startswith('_cmd_')))
 
 	def decode(self, data, encoding=None):
 		encoding = encoding or self.variables['encoding']
+
 		encoding = encoding.lower()
 		if encoding in ('utf-8', 'utf-16', 'utf-16be', 'utf-16le', 'utf-32', 'utf-32be', 'utf-32le'):
 			data = data.encode(encoding)

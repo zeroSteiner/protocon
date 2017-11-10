@@ -1,0 +1,5 @@
+recv-until:\r\n
+send:USER anonymous\r\n
+recv-until:\r\n
+send:PASS guest\r\n
+recv-time:1.5
