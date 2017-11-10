@@ -35,5 +35,8 @@ class ConnectionDriver(protocon.ConnectionDriver):
 	def recv_timeout(self, timeout):
 		return b'\x00'
 
+	def recv_until(self, terminator):
+		return terminator
+
 	def send(self, data):
 		pass

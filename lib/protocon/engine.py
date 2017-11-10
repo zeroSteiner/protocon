@@ -54,7 +54,7 @@ def print_hexdump(data, stream=None, encoding='utf-8'):
 		hex_col = ''
 		for pos, byte in enumerate(chunk):
 			hex_col += '   ' if byte == -1 else "{0:02x} ".format(byte)
-			if pos and pos % divider == 0:
+			if pos and (pos + 1) % divider == 0:
 				hex_col += ' '
 		hex_col = hex_col[:-1]
 		ascii_col = ''
