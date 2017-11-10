@@ -29,23 +29,12 @@ import sys
 
 import boltons.iterutils
 import boltons.urlutils
+import pluginbase
 
 get_path = functools.partial(os.path.join, os.path.abspath(os.path.dirname(__file__)))
 sys.path.append(get_path('lib'))
 
 import protocon
-
-_net_attributes = ('host', 'port',)
-SCHEMES = {
-	'pipe': ('path',),
-	'tcp': _net_attributes,
-	'tcp4': _net_attributes,
-	'tcp6': _net_attributes,
-	'udp': _net_attributes,
-	'udp4': _net_attributes,
-	'udp6': _net_attributes,
-}
-del _net_attributes
 
 def main():
 	parser = argparse.ArgumentParser(description='ProtoCon', conflict_handler='resolve')
@@ -55,16 +44,26 @@ def main():
 	arguments = parser.parse_args()
 
 	url = boltons.urlutils.URL(arguments.target_url)
-	scheme_attributes = SCHEMES.get(url.scheme)
-	if not scheme_attributes:
-		protocon.engine.print_error('unsupported URL scheme: ' + url.scheme)
-		return os.EX_USAGE
-	for attribute in scheme_attributes:
-		if not getattr(url, attribute):
-			protocon.engine.print_error('missing URL attribute: ' + attribute)
-			return os.EX_USAGE
 
-	engine = protocon.Engine.from_url(url)
+	plugins = pluginbase.PluginBase(package='protocon.plugins').make_plugin_source(
+		searchpath=[get_path('lib', 'protocon', 'plugins')]
+	)
+	connection_drivers = {}
+	for plugin in plugins.list_plugins():
+		module = plugins.load_plugin(plugin)
+		if not hasattr(module, 'ConnectionDriver'):
+			continue
+		connection_drivers[plugin] = module.ConnectionDriver
+
+	driver = next((driver for driver in connection_drivers.values() if url.scheme in driver.schemes), None)
+	if driver is None:
+		protocon.engine.print_error('no connection driver for scheme: ' + url.scheme)
+		return os.EX_USAGE
+
+	driver = driver(url)
+	engine = protocon.Engine(driver)
+	for line in arguments.script:
+		engine.run_command(line.strip())
 
 	engine.connection.close()
 	return 0

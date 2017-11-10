@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
-#  protocon/connection_driver.py
+#  protocon/plugins/driver_null.py
 #
 #  Copyright 2017 Spencer McIntyre <zeroSteiner@gmail.com>
 #
@@ -22,18 +22,18 @@
 #
 #
 
-class ConnectionDriver(object):
-	def __init__(self, url):
-		self.url = url
+import protocon
 
-	def close(self):
-		pass
+class ConnectionDriver(protocon.ConnectionDriver):
+	schemes = ('null',)
+	def __init__(self, *args, **kwargs):
+		super(ConnectionDriver, self).__init__(*args, **kwargs)
 
 	def recv_size(self, size):
-		raise NotImplementedError()
+		return b'\x00' * size
 
 	def recv_timeout(self, timeout):
-		raise NotImplementedError()
+		return b'\x00'
 
 	def send(self, data):
-		raise NotImplementedError()
+		pass

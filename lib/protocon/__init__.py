@@ -23,4 +23,5 @@
 #
 
 __version__ = '1.0'
+from .connection_driver import ConnectionDriver
 from .engine import Engine
