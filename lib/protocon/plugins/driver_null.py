@@ -28,6 +28,7 @@ class ConnectionDriver(protocon.ConnectionDriver):
 	schemes = ('null',)
 	def __init__(self, *args, **kwargs):
 		super(ConnectionDriver, self).__init__(*args, **kwargs)
+		self.connected = True
 
 	def recv_size(self, size):
 		return b'\x00' * size

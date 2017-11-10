@@ -39,12 +39,14 @@ class ConnectionDriver(protocon.ConnectionDriver):
 		elif self.url.scheme == 'tcp6':
 			self._connection = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
 			self._connection.connect((self.url.host, self.url.port))
+		self.connected = True
 
 	def _recv_size(self, size):
 		return self._connection.recv(size)
 
 	def close(self):
 		self._connection.close()
+		super(ConnectionDriver, self).close()
 
 	def recv_size(self, size):
 		data = b''

@@ -27,9 +27,10 @@ class ConnectionDriver(object):
 	url_attributes = ()
 	def __init__(self, url):
 		self.url = url
+		self.connected = False
 
 	def close(self):
-		pass
+		self.connected = False
 
 	def recv_size(self, size):
 		raise NotImplementedError()

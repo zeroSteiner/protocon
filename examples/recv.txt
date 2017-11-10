@@ -1,0 +1,2 @@
+# simple example to receive a banner sent by the server
+recv-time:1

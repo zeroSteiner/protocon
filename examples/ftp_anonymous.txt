@@ -1,3 +1,4 @@
+# example that logs into an ftp server as an anonymous user
 recv-until:\r\n
 send:USER anonymous\r\n
 recv-until:\r\n

@@ -37,6 +37,7 @@ class ConnectionDriver(protocon.ConnectionDriver):
 			self._connection = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 		elif self.url.scheme == 'udp6':
 			self._connection = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
+		self.connected = True
 
 	def _recv_size(self, size):
 		return self._connection.recvfrom(size)
