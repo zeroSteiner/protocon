@@ -59,6 +59,10 @@ def main():
 	if driver is None:
 		protocon.engine.print_error('no connection driver for scheme: ' + url.scheme)
 		return os.EX_USAGE
+	for attribute in driver.url_attributes:
+		if not getattr(url, attribute):
+			protocon.engine.print_error('missing required URL attribute: ' + attribute)
+			return os.EX_USAGE
 
 	driver = driver(url)
 	engine = protocon.Engine(driver)

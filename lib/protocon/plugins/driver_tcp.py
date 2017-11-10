@@ -30,6 +30,7 @@ import protocon
 
 class ConnectionDriver(protocon.ConnectionDriver):
 	schemes = ('tcp', 'tcp4', 'tcp6')
+	url_attributes = ('host', 'port',)
 	def __init__(self, *args, **kwargs):
 		super(ConnectionDriver, self).__init__(*args, **kwargs)
 		if self.url.scheme in ('tcp', 'tcp4'):
