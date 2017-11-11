@@ -71,12 +71,7 @@ def main():
 
 	driver = driver(url)
 	engine = protocon.Engine(driver)
-	for line in arguments.script:
-		try:
-			engine.run_command(line.strip())
-		except KeyboardInterrupt:
-			protocon.print_status('caught interrupt')
-			break
+	engine.cmdloop()
 
 	engine.connection.close()
 	return 0

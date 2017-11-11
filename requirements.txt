@@ -1,4 +1,6 @@
 boltons
+cmd2
 crcelk
+ipython
 pyserial
 termcolor
