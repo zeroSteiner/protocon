@@ -25,6 +25,9 @@
 import protocon
 
 class ConnectionDriver(protocon.ConnectionDriver):
+	examples = {
+		'null': 'null:'
+	}
 	schemes = ('null',)
 	def __init__(self, *args, **kwargs):
 		super(ConnectionDriver, self).__init__(*args, **kwargs)

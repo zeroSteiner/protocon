@@ -66,6 +66,8 @@ def eval_token(value):
 		value = int(value[2:], 8)
 	elif re.match(r'^0x[a-fA-F0-9]+$', value):
 		value = int(value[2:], 16)
+	elif re.match(r'^[0-9]+\.[0-9]*$', value):
+		value = float(value)
 	elif re.match(r'^[0-9]+$', value):
 		value = int(value, 10)
 	return value

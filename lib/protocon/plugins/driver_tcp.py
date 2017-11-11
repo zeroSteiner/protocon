@@ -29,6 +29,10 @@ import time
 import protocon
 
 class ConnectionDriver(protocon.ConnectionDriver):
+	examples = {
+		'tcp': 'tcp://1.2.3.4:123',
+		'tcp4': 'tcp4://1.2.3.4:123'
+	}
 	schemes = ('tcp', 'tcp4', 'tcp6')
 	url_attributes = ('host', 'port',)
 	def __init__(self, *args, **kwargs):
