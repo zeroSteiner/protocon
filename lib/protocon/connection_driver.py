@@ -23,6 +23,7 @@
 #
 
 class ConnectionDriver(object):
+	examples = {}
 	schemes = ()
 	url_attributes = ()
 	def __init__(self, url):

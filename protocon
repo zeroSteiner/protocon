@@ -37,23 +37,27 @@ sys.path.append(get_path('lib'))
 import protocon
 
 def main():
-	parser = argparse.ArgumentParser(description='ProtoCon', conflict_handler='resolve')
-	parser.add_argument('-v', '--version', action='version', version='%(prog)s Version: ' + protocon.__version__)
-	parser.add_argument('target_url', help='the connection URL')
-	parser.add_argument('script', type=argparse.FileType('r'), help='the script to execute')
-	arguments = parser.parse_args()
-
-	url = boltons.urlutils.URL(arguments.target_url)
-
 	plugins = pluginbase.PluginBase(package='protocon.plugins').make_plugin_source(
 		searchpath=[get_path('lib', 'protocon', 'plugins')]
 	)
 	connection_drivers = {}
+	epilog = 'target_url examples:\n'
 	for plugin in plugins.list_plugins():
 		module = plugins.load_plugin(plugin)
 		if not hasattr(module, 'ConnectionDriver'):
 			continue
 		connection_drivers[plugin] = module.ConnectionDriver
+		for example in module.ConnectionDriver.examples.values():
+			epilog += "  {0}\n".format(example)
+
+	parser = argparse.ArgumentParser(description='ProtoCon', conflict_handler='resolve', formatter_class=argparse.RawTextHelpFormatter)
+	parser.add_argument('-v', '--version', action='version', version='%(prog)s Version: ' + protocon.__version__)
+	parser.add_argument('target_url', help='the connection URL')
+	parser.add_argument('script', type=argparse.FileType('r'), help='the script to execute')
+	parser.epilog = epilog
+	arguments = parser.parse_args()
+
+	url = boltons.urlutils.URL(arguments.target_url)
 
 	protocon.print_status("loaded {0} connection drivers".format(len(connection_drivers)))
 	driver = next((driver for driver in connection_drivers.values() if url.scheme in driver.schemes), None)
