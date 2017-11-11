@@ -23,5 +23,6 @@
 #
 
 __version__ = '1.0'
+from .color import print_error, print_good, print_status
 from .connection_driver import ConnectionDriver
 from .engine import Engine
