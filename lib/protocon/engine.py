@@ -25,7 +25,9 @@
 import ast
 import collections
 import datetime
+import sys
 import time
+import traceback
 
 import cmd2
 import crcelk
@@ -52,10 +54,10 @@ class Engine(cmd2.Cmd):
 			'print_tx': 'Print sent data.'
 		})
 
-		color.print_good("initialized protocon engine v{0} at {1:%Y-%m-%d %H:%M:%S}".format(__version__, datetime.datetime.now()))
-		color.print_good('connected to: ' + connection.url.to_text())
 		self.io_history = self.IOHistory(rx=collections.deque(), tx=collections.deque())
 		super(Engine, self).__init__(use_ipython=True)
+		self.pgood("initialized protocon engine v{0} at {1:%Y-%m-%d %H:%M:%S}".format(__version__, datetime.datetime.now()))
+		self.pgood('connected to: ' + connection.url.to_text())
 
 	def _crc_string(self, data):
 		algo = getattr(crcelk, self.crc_algorithm)
@@ -63,39 +65,27 @@ class Engine(cmd2.Cmd):
 
 	def _process_send(self, data):
 		self.io_history.tx.append(data)
-		color.print_status("TX: {0: 6} bytes (CRC: {1})".format(len(data), self._crc_string(data)))
+		self.pstatus("TX: {0: 6} bytes (CRC: {1})".format(len(data), self._crc_string(data)))
 		if not self.print_tx:
 			return
 		color.print_hexdump(data)
 
 	def _process_recv(self, data):
 		self.io_history.rx.append(data)
-		color.print_status("RX: {0: 6} bytes (CRC: {1})".format(len(data), self._crc_string(data)))
+		self.pstatus("RX: {0: 6} bytes (CRC: {1})".format(len(data), self._crc_string(data)))
 		if not self.print_rx:
 			return
 		color.print_hexdump(data)
 
 	def do_close(self, arguments):
 		self.connection.close()
-		color.print_status('the connection has been closed')
-		return False
-
-	def do_print_error(self, arguments):
-		color.print_error(arguments)
-		return False
-
-	def do_print_good(self, arguments):
-		color.print_error(arguments)
-		return False
-
-	def do_print_status(self, arguments):
-		color.print_status(arguments)
+		self.pstatus('the connection has been closed')
 		return False
 
 	def do_recv_size(self, arguments):
 		size = ast.literal_eval(arguments) if arguments else None
 		if not isinstance(size, int):
-			color.print_error('command error: recv-size must specify a valid size')
+			self.pwarning('command error: recv-size must specify a valid size')
 			return False
 		self._process_recv(self.connection.recv_size(size))
 		return False
@@ -103,7 +93,7 @@ class Engine(cmd2.Cmd):
 	def do_recv_time(self, arguments):
 		timeout = ast.literal_eval(arguments) if arguments else None
 		if not isinstance(timeout, (float, int)):
-			color.print_error('command error: recv-time must specify a valid timeout')
+			self.pwarning('command error: recv-time must specify a valid timeout')
 			return False
 		self._process_recv(self.connection.recv_timeout(timeout))
 		return False
@@ -111,7 +101,7 @@ class Engine(cmd2.Cmd):
 	def do_recv_until(self, arguments):
 		terminator = self.decode(arguments)
 		if not terminator:
-			color.print_error('command error: recv-until must specify a valid terminator')
+			self.pwarning('command error: recv-until must specify a valid terminator')
 			return False
 		self._process_recv(self.connection.recv_until(terminator))
 
@@ -124,7 +114,7 @@ class Engine(cmd2.Cmd):
 	def do_sleep(self, arguments):
 		duration = ast.literal_eval(arguments) if arguments else None
 		if not isinstance(duration, (float, int)):
-			color.print_error('command error: sleep must specify a valid duration')
+			self.pwarning('command error: sleep must specify a valid duration')
 			return False
 		time.sleep(duration)
 		return False
@@ -132,3 +122,61 @@ class Engine(cmd2.Cmd):
 	def decode(self, data, encoding=None):
 		encoding = encoding or self.encoding
 		return conversion.decode(data, encoding)
+
+	def perror(self, errmsg, exception_type=None, traceback_war=True):
+		if self.debug:
+			traceback.print_exc()
+
+		if exception_type is None:
+			errmsg = 'ERROR: ' + errmsg + '\n'
+			if self.colors:
+				errmsg = color.PREFIX_ERROR + errmsg
+			else:
+				errmsg = color.PREFIX_ERROR_RAW + errmsg
+			sys.stderr.write(errmsg)
+		else:
+			errmsg = "EXCEPTION of type '{}' occurred with message: '{}'\n".format(exception_type, errmsg)
+			if self.colors:
+				errmsg = color.PREFIX_ERROR + errmsg
+			else:
+				errmsg = color.PREFIX_ERROR_RAW + errmsg
+			sys.stderr.write(errmsg)
+
+		if traceback_war:
+			warning = 'To enable full traceback, run the following command:  \'set debug true\'\n'
+			if self.colors:
+				warning = color.PREFIX_WARNING + warning
+			else:
+				warning = color.PREFIX_WARNING_RAW + warning
+			sys.stderr.write(warning)
+
+	def pfeedback(self, msg):
+		if self.quiet:
+			return
+		if self.feedback_to_output:
+			msg = (color.PREFIX_STATUS if self.colors else color.PREFIX_STATUS_RAW) + msg
+			self.poutput(msg)
+		else:
+			msg = color.PREFIX_STATUS_RAW + msg
+			sys.stderr.write("{}\n".format(msg))
+
+	def pgood(self, msg, end='\n'):
+		if self.colors:
+			msg = color.PREFIX_GOOD + msg
+		else:
+			msg = color.PREFIX_GOOD_RAW + msg
+		super(Engine, self).poutput(msg, end=end)
+
+	def pstatus(self, msg, end='\n'):
+		if self.colors:
+			msg = color.PREFIX_STATUS + msg
+		else:
+			msg = color.PREFIX_STATUS_RAW + msg
+		super(Engine, self).poutput(msg, end=end)
+
+	def pwarning(self, msg, end='\n'):
+		if self.colors:
+			msg = color.PREFIX_WARNING + msg
+		else:
+			msg = color.PREFIX_WARNING_RAW + msg
+		super(Engine, self).poutput(msg, end=end)

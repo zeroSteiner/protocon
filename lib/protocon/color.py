@@ -22,12 +22,24 @@
 #
 #
 
+import functools
 import os
 import sys
 
 import boltons.iterutils
 import boltons.urlutils
 import termcolor
+
+colored_prefix = functools.partial(termcolor.colored, attrs=('bold',))
+PREFIX_ERROR_RAW = '[-] '
+PREFIX_ERROR = colored_prefix(PREFIX_ERROR_RAW, 'red')
+PREFIX_GOOD_RAW = '[+] '
+PREFIX_GOOD = colored_prefix(PREFIX_GOOD_RAW, 'green')
+PREFIX_STATUS_RAW = '[*] '
+PREFIX_STATUS = colored_prefix(PREFIX_STATUS_RAW, 'blue')
+PREFIX_WARNING_RAW = '[!] '
+PREFIX_WARNING = colored_prefix(PREFIX_WARNING_RAW, 'yellow')
+
 
 def print_hexdump(data, stream=None, encoding='utf-8'):
 	if not stream:
@@ -67,5 +79,5 @@ def print_good(message, *args, **kwargs):
 	print(message, *args, **kwargs)
 
 def print_status(message, *args, **kwargs):
-	message = termcolor.colored('[*] ', 'blue', attrs=('bold',)) + message
+	message = PREFIX_STATUS + message
 	print(message, *args, **kwargs)
