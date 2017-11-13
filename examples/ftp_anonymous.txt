@@ -1,6 +1,7 @@
 # example that logs into an ftp server as an anonymous user
-recv-until:\r\n
-send:USER anonymous\r\n
-recv-until:\r\n
-send:PASS guest\r\n
-recv-time:1.5
+recv_until \r\n
+send USER anonymous\r\n
+recv_until \r\n
+send PASS guest\r\n
+recv_time 1.5
+close

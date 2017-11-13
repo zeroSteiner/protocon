@@ -51,27 +51,32 @@ def main():
 			epilog += "  {0}\n".format(example)
 
 	parser = argparse.ArgumentParser(description='ProtoCon', conflict_handler='resolve', formatter_class=argparse.RawTextHelpFormatter)
+	parser.add_argument('-q', '--quiet', action='store_true', default=False, help='initialize quiet to True')
 	parser.add_argument('-v', '--version', action='version', version='%(prog)s Version: ' + protocon.__version__)
 	parser.add_argument('target_url', help='the connection URL')
-	parser.add_argument('script', type=argparse.FileType('r'), help='the script to execute')
+	parser.add_argument('scripts', metavar='script', nargs='*', help='the script to execute')
 	parser.epilog = epilog
 	arguments = parser.parse_args()
 
 	url = boltons.urlutils.URL(arguments.target_url)
 
-	protocon.print_status("loaded {0} connection drivers".format(len(connection_drivers)))
+	protocon.print_status("Loaded {0} connection drivers".format(len(connection_drivers)))
 	driver = next((driver for driver in connection_drivers.values() if url.scheme in driver.schemes), None)
 	if driver is None:
-		protocon.print_error('no connection driver for scheme: ' + url.scheme)
+		protocon.print_error('No connection driver for scheme: ' + url.scheme)
 		return os.EX_USAGE
 	for attribute in driver.url_attributes:
 		if not getattr(url, attribute):
-			protocon.print_error('missing required URL attribute: ' + attribute)
+			protocon.print_error('Missing required URL attribute: ' + attribute)
 			return os.EX_USAGE
 
 	driver = driver(url)
-	engine = protocon.Engine(driver)
-	engine.cmdloop()
+	engine = protocon.Engine(driver, quiet=arguments.quiet)
+	for script in arguments.scripts:
+		if engine.do_load(script):
+			break
+	else:
+		engine.cmdloop()
 
 	engine.connection.close()
 	return 0
