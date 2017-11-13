@@ -25,6 +25,7 @@
 import ast
 import collections
 import datetime
+import functools
 import sys
 import time
 import traceback
@@ -56,9 +57,24 @@ class Engine(cmd2.Cmd):
 
 		self.io_history = self.IOHistory(rx=collections.deque(), tx=collections.deque())
 		self.quiet = quiet
+
+		self._onchange_crc_algorithm = functools.partial(
+			self._set_enumeration,
+			'crc_algorithm',
+			('CRC15', 'CRC16', 'CRC16_USB', 'CRC24', 'CRC32', 'CRC_CCITT', 'CRC_HDLC', 'CRC_XMODEM')
+		)
+
 		super(Engine, self).__init__(use_ipython=True, **kwargs)
+		self.exclude_from_help.append('do__relative_load')
 		self.pgood("Initialized protocon engine v{0} at {1:%Y-%m-%d %H:%M:%S}".format(__version__, datetime.datetime.now()))
 		self.pgood('Connected to: ' + connection.url.to_text())
+
+	def _set_enumeration(self, name, choices, old=None, new=None):
+		if new in choices:
+			setattr(self, name, new)
+		else:
+			setattr(self, name, old)
+			self.perror("Invalid value: {0!r} for option: {1}".format(new, name), traceback_war=False)
 
 	def _crc_string(self, data):
 		algo = getattr(crcelk, self.crc_algorithm)
