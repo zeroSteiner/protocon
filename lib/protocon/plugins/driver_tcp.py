@@ -46,7 +46,10 @@ class ConnectionDriver(protocon.ConnectionDriver):
 		self.connected = True
 
 	def _recv_size(self, size):
-		return self._connection.recv(size)
+		data = self._connection.recv(size)
+		if not data:
+			self.connected = False
+		return data
 
 	def close(self):
 		self._connection.close()
@@ -54,7 +57,7 @@ class ConnectionDriver(protocon.ConnectionDriver):
 
 	def recv_size(self, size):
 		data = b''
-		while len(data) < size:
+		while len(data) < size and self.connected:
 			data += self._recv_size(size - len(data))
 		return data
 
@@ -62,7 +65,7 @@ class ConnectionDriver(protocon.ConnectionDriver):
 		_select = lambda t: select.select([self._connection], [], [], t)[0]
 		remaining = timeout
 		data = b''
-		while remaining > 0:
+		while remaining > 0 and self.connected:
 			start_time = time.time()
 			if _select(remaining):
 				data += self._recv_size(1)

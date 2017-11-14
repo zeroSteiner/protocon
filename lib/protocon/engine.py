@@ -85,6 +85,13 @@ class Engine(cmd2.Cmd):
 		algo = getattr(crcelk, self.crc_algorithm)
 		return "0x{value:0{width:}x}".format(value=algo.calc_bytes(data), width=algo.width // 4)
 
+	def _post_do_recv(self, data, opts=None):
+		self._process_recv(data)
+		if opts and opts.file:
+			with open(opts.file, 'wb') as file_h:
+				file_h.write(data)
+		return False
+
 	def _process_send(self, data):
 		self.io_history.tx.append(data)
 		self.pstatus("TX: {0: 6} bytes (CRC: {1})".format(len(data), self._crc_string(data)))
@@ -110,42 +117,27 @@ class Engine(cmd2.Cmd):
 		"""Receive the specified number of bytes from the endpoint."""
 		size = conversion.eval_token(arguments[0])
 		if not isinstance(size, int):
-			self.pwarning('Command Error: recv-size must specify a valid size')
+			self.pwarning('Command Error: recv_size must specify a valid size')
 			return False
-		data = self.connection.recv_size(size)
-		self._process_recv(data)
-		if opts.file:
-			with open(opts.file, 'wb') as file_h:
-				file_h.write(data)
-		return False
+		return self._post_do_recv(self.connection.recv_size(size), opts)
 
 	@cmd2.options([cmd2.make_option('-f', '--file', action='store', type='str', help='write the received data to the file')])
 	def do_recv_time(self, arguments, opts=None):
 		"""Receive data for the specified amount of seconds."""
 		timeout = conversion.eval_token(arguments[0])
 		if not isinstance(timeout, (float, int)):
-			self.pwarning('Command Error: recv-time must specify a valid timeout')
+			self.pwarning('Command Error: recv_time must specify a valid timeout')
 			return False
-		data = self.connection.recv_timeout(timeout)
-		self._process_recv(data)
-		if opts.file:
-			with open(opts.file, 'wb') as file_h:
-				file_h.write(data)
-		return False
+		return self._post_do_recv(self.connection.recv_timeout(timeout), opts)
 
 	@cmd2.options([cmd2.make_option('-f', '--file', action='store', type='str', help='write the received data to the file')])
 	def do_recv_until(self, arguments, opts=None):
 		"""Receive data until the specified terminator is received."""
 		terminator = self.decode(arguments[0], 'utf-8')
 		if not terminator:
-			self.pwarning('Command Error: recv-until must specify a valid terminator')
+			self.pwarning('Command Error: recv_until must specify a valid terminator')
 			return False
-		data = self.connection.recv_until(terminator)
-		self._process_recv(data)
-		if opts.file:
-			with open(opts.file, 'wb') as file_h:
-				file_h.write(data)
-		return False
+		return self._post_do_recv(self.connection.recv_until(terminator), opts)
 
 	def do_send(self, arguments):
 		"""Send the specified data.\nUsage:  send <data>"""
@@ -210,6 +202,14 @@ class Engine(cmd2.Cmd):
 		else:
 			msg = color.PREFIX_GOOD_RAW + msg
 		super(Engine, self).poutput(msg, end=end)
+
+	def postcmd(self, stop, line):
+		if stop:
+			return True
+		if not self.connection.connected:
+			self.perror('The remote end has closed the connection', traceback_war=False)
+			return True
+		return False
 
 	def pstatus(self, msg, end='\n'):
 		if self.colors:
