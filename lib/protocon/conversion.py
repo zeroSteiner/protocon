@@ -25,7 +25,7 @@
 import binascii
 import re
 
-ENCODINGS = ('hex', 'utf-8', 'utf-16', 'utf-16be', 'utf-16le', 'utf-32', 'utf-32be', 'utf-32le')
+ENCODINGS = ('base16', 'base64', 'hex', 'utf-8', 'utf-16', 'utf-16be', 'utf-16le', 'utf-32', 'utf-32be', 'utf-32le')
 
 def _decodestr_repl(match):
 	match = match.group(1)
@@ -40,12 +40,22 @@ def _decodestr_repl(match):
 	raise ValueError('unknown escape sequence: ' + match)
 
 def decode(data, encoding):
+	"""
+	Decode data to a byte string using the specified encoding.
+
+	:param str data:
+	:param str encoding:
+	:return: The decoded data.
+	:rtype: bytes
+	"""
 	encoding = encoding.lower()
 	if encoding in ('utf-8', 'utf-16', 'utf-16be', 'utf-16le', 'utf-32', 'utf-32be', 'utf-32le'):
 		data = data.encode(encoding)
 		regex = br'(?<!\\)(?:\\\\)*\\([nrt]|x[0-9a-f][0-9a-f])'
 		data = re.sub(regex, _decodestr_repl, data)
-	elif encoding == 'hex':
+	elif encoding == 'base64':
+		data = binascii.a2b_base64(data)
+	elif encoding in ('base16', 'hex'):
 		if len(data) > 2 and re.match(r'^[a-f0-9]{2}[^a-f0-9]', data):
 			data = data.replace(data[3], '')
 		data = binascii.a2b_hex(data)

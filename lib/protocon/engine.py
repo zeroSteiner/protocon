@@ -27,6 +27,7 @@ import collections
 import datetime
 import functools
 import sys
+import textwrap
 import time
 import traceback
 
@@ -73,9 +74,12 @@ class Engine(cmd2.Cmd):
 	def _set_enumeration(self, name, choices, old=None, new=None):
 		if new in choices:
 			setattr(self, name, new)
-		else:
-			setattr(self, name, old)
-			self.perror("Invalid value: {0!r} for option: {1}".format(new, name), traceback_war=False)
+			return
+		setattr(self, name, old)
+		self.perror("Invalid value: {0!r} for option: {1}, choose one of:".format(new, name), traceback_war=False)
+		prefix = (color.PREFIX_ERROR if self.colors else color.PREFIX_ERROR_RAW) + '       '
+		for choice_line in textwrap.wrap(', '.join(choices), 69):
+			sys.stderr.write(prefix + choice_line + '\n')
 
 	def _crc_string(self, data):
 		algo = getattr(crcelk, self.crc_algorithm)

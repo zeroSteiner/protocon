@@ -30,8 +30,8 @@ import protocon
 
 class ConnectionDriver(protocon.ConnectionDriver):
 	examples = {
-		'udp': 'tcp://1.2.3.4:123',
-		'udp4': 'tcp4://1.2.3.4:123'
+		'udp': 'udp://1.2.3.4:123',
+		'udp4': 'udp4://1.2.3.4:123'
 	}
 	schemes = ('udp', 'udp4', 'udp6')
 	url_attributes = ('host', 'port',)
