@@ -72,6 +72,8 @@ class ConnectionDriver(protocon.ConnectionDriver):
 			raise ValueError("unsupported option: {0}".format(tuple(query_params.keys())[0]))
 
 		self._connection = serial.Serial(self.url.path, **self.settings)
+		self._connection.setRTS(True)
+		self._connection.setDTR(False)
 		self.connected = True
 
 	def _recv_size(self, size):
