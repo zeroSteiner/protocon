@@ -70,4 +70,6 @@ def eval_token(value):
 		value = float(value)
 	elif re.match(r'^[0-9]+$', value):
 		value = int(value, 10)
+	elif re.match(r'^("|\').+\1$', value):
+		value = value[1:-1]
 	return value

@@ -44,7 +44,7 @@ class Engine(cmd2.Cmd):
 	def __init__(self, connection, quiet=False, **kwargs):
 		self.connection = connection
 		# variables
-		self.crc_algorithm = 'CRC_CCITT'
+		self.crc_algorithm = 'CRC16'
 		self.encoding = 'utf-8'
 		self.print_rx = True
 		self.print_tx = True
@@ -63,6 +63,7 @@ class Engine(cmd2.Cmd):
 			'crc_algorithm',
 			('CRC15', 'CRC16', 'CRC16_USB', 'CRC24', 'CRC32', 'CRC_CCITT', 'CRC_HDLC', 'CRC_XMODEM')
 		)
+		self._onchange_encoding = functools.partial(self._set_enumeration, 'encoding', conversion.ENCODINGS)
 
 		super(Engine, self).__init__(use_ipython=True, **kwargs)
 		self.exclude_from_help.append('do__relative_load')
@@ -95,11 +96,13 @@ class Engine(cmd2.Cmd):
 		color.print_hexdump(data)
 
 	def do_close(self, arguments):
+		"""Close the connection."""
 		self.connection.close()
 		self.pstatus('The connection has been closed')
 		return True
 
 	def do_recv_size(self, arguments):
+		"""Receive the specified number of bytes from the endpoint.\nUsage:  recv_size <size>"""
 		size = ast.literal_eval(arguments) if arguments else None
 		if not isinstance(size, int):
 			self.pwarning('Command Error: recv-size must specify a valid size')
@@ -108,6 +111,7 @@ class Engine(cmd2.Cmd):
 		return False
 
 	def do_recv_time(self, arguments):
+		"""Receive data for the specified amount of seconds.\nUsage:  recv_time <time>"""
 		timeout = ast.literal_eval(arguments) if arguments else None
 		if not isinstance(timeout, (float, int)):
 			self.pwarning('Command Error: recv-time must specify a valid timeout')
@@ -116,6 +120,7 @@ class Engine(cmd2.Cmd):
 		return False
 
 	def do_recv_until(self, arguments):
+		"""Receive data until the specified terminator is received.\nUsage:  recv_until <terminator>"""
 		terminator = self.decode(arguments)
 		if not terminator:
 			self.pwarning('Command Error: recv-until must specify a valid terminator')
@@ -123,12 +128,14 @@ class Engine(cmd2.Cmd):
 		self._process_recv(self.connection.recv_until(terminator))
 
 	def do_send(self, arguments):
+		"""Send the specified data.\nUsage:  send <data>"""
 		data = self.decode(arguments)
 		self.connection.send(data)
 		self._process_send(data)
 		return False
 
 	def do_sleep(self, arguments):
+		"""Sleep for the specified duration in seconds.\nUsage:  sleep <time>"""
 		duration = ast.literal_eval(arguments) if arguments else None
 		if not isinstance(duration, (float, int)):
 			self.pwarning('Command Error: sleep must specify a valid duration')
