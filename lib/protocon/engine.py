@@ -112,8 +112,11 @@ class Engine(cmd2.Cmd):
 		self.pstatus('The connection has been closed')
 		return True
 
-	@cmd2.options([cmd2.make_option('-f', '--file', action='store', type='str', help='write the received data to the file')])
-	def do_recv_size(self, arguments, opts=None):
+	@cmd2.options(
+		[cmd2.make_option('-f', '--file', action='store', type='str', help='write the received data to the file')],
+		arg_desc='size'
+	)
+	def do_recv_size(self, arguments, opts):
 		"""Receive the specified number of bytes from the endpoint."""
 		size = conversion.eval_token(arguments[0])
 		if not isinstance(size, int):
@@ -121,8 +124,11 @@ class Engine(cmd2.Cmd):
 			return False
 		return self._post_do_recv(self.connection.recv_size(size), opts)
 
-	@cmd2.options([cmd2.make_option('-f', '--file', action='store', type='str', help='write the received data to the file')])
-	def do_recv_time(self, arguments, opts=None):
+	@cmd2.options(
+		[cmd2.make_option('-f', '--file', action='store', type='str', help='write the received data to the file')],
+		arg_desc='time'
+	)
+	def do_recv_time(self, arguments, opts):
 		"""Receive data for the specified amount of seconds."""
 		timeout = conversion.eval_token(arguments[0])
 		if not isinstance(timeout, (float, int)):
@@ -130,8 +136,11 @@ class Engine(cmd2.Cmd):
 			return False
 		return self._post_do_recv(self.connection.recv_timeout(timeout), opts)
 
-	@cmd2.options([cmd2.make_option('-f', '--file', action='store', type='str', help='write the received data to the file')])
-	def do_recv_until(self, arguments, opts=None):
+	@cmd2.options(
+		[cmd2.make_option('-f', '--file', action='store', type='str', help='write the received data to the file')],
+		arg_desc='terminator'
+	)
+	def do_recv_until(self, arguments, opts):
 		"""Receive data until the specified terminator is received."""
 		terminator = self.decode(arguments[0], 'utf-8')
 		if not terminator:
@@ -139,9 +148,10 @@ class Engine(cmd2.Cmd):
 			return False
 		return self._post_do_recv(self.connection.recv_until(terminator), opts)
 
-	def do_send(self, arguments):
-		"""Send the specified data.\nUsage:  send <data>"""
-		data = self.decode(arguments)
+	@cmd2.options([], arg_desc='data')
+	def do_send(self, arguments, _opts):
+		"""Send the specified data."""
+		data = self.decode(arguments[0])
 		self.connection.send(data)
 		self._process_send(data)
 		return False
