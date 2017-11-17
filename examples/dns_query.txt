@@ -1,0 +1,5 @@
+# example that makes a dns query to resolve www.google.com
+set encoding hex
+send 3749012000010000000000010377777706676f6f676c6503636f6d0000010001000029100000000000000c000a00084ec13b367986a5d5
+recv_time 1
+close
