@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
-#  protocon/__init__.py
+#  protocon/plugin_manager.py
 #
 #  Redistribution and use in source and binary forms, with or without
 #  modification, are permitted provided that the following conditions are
@@ -30,8 +30,19 @@
 #  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-__version__ = '1.0'
-from .color import print_error, print_good, print_status
-from .connection_driver import ConnectionDriver
-from .engine import Engine
-from .plugin_manager import PluginManager
+import pluginbase
+
+class PluginManager(object):
+	__slots__ = ('source', 'connection_drivers', 'transcoders')
+	def __init__(self, searchpath):
+		self.source = pluginbase.PluginBase(package='protocon.plugins').make_plugin_source(
+			searchpath=searchpath
+		)
+		self.connection_drivers = {}
+		self.transcoders = {}
+		for plugin in self.source.list_plugins():
+			module = self.source.load_plugin(plugin)
+			if hasattr(module, 'ConnectionDriver'):
+				self.connection_drivers[plugin] = module.ConnectionDriver
+			if hasattr(module, 'Transcoder'):
+				self.transcoders[plugin] = module.Transcoder

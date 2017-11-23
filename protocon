@@ -37,7 +37,6 @@ import sys
 
 import boltons.iterutils
 import boltons.urlutils
-import pluginbase
 
 get_path = functools.partial(os.path.join, os.path.abspath(os.path.dirname(__file__)))
 sys.path.append(get_path('lib'))
@@ -45,17 +44,14 @@ sys.path.append(get_path('lib'))
 import protocon
 
 def main():
-	plugins = pluginbase.PluginBase(package='protocon.plugins').make_plugin_source(
-		searchpath=[get_path('lib', 'protocon', 'plugins')]
-	)
-	connection_drivers = {}
+	data_path = os.path.join(os.path.expanduser('~'), '.config', 'protocon')
+	plugin_manager = protocon.PluginManager([
+		get_path('lib', 'protocon', 'plugins'),
+		os.path.join(data_path, 'plugins')
+	])
 	epilog = 'target_url examples:\n'
-	for plugin in plugins.list_plugins():
-		module = plugins.load_plugin(plugin)
-		if not hasattr(module, 'ConnectionDriver'):
-			continue
-		connection_drivers[plugin] = module.ConnectionDriver
-		for example in module.ConnectionDriver.examples.values():
+	for connection_driver in plugin_manager.connection_drivers.values():
+		for example in connection_driver.examples.values():
 			epilog += "  {0}\n".format(example)
 
 	parser = argparse.ArgumentParser(description='ProtoCon', conflict_handler='resolve', formatter_class=argparse.RawTextHelpFormatter)
@@ -68,8 +64,10 @@ def main():
 
 	url = boltons.urlutils.URL(arguments.target_url)
 
-	protocon.print_status("Loaded {0} connection drivers".format(len(connection_drivers)))
-	driver = next((driver for driver in connection_drivers.values() if url.scheme in driver.schemes), None)
+	protocon.print_status("Loaded {0:,} connection drivers".format(len(plugin_manager.connection_drivers)))
+	if plugin_manager.transcoders:
+		protocon.print_status("Loaded {0:,} transcode drivers".format(len(plugin_manager.transcoders)))
+	driver = next((driver for driver in plugin_manager.connection_drivers.values() if url.scheme in driver.schemes), None)
 	if driver is None:
 		protocon.print_error('No connection driver for scheme: ' + url.scheme)
 		return os.EX_USAGE

@@ -30,3 +30,4 @@ send 06ee0000000003300005714b
 recv_time 0.5
 send 06ee0020000001210b61
 recv_time 0.5
+close
