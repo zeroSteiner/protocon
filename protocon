@@ -74,11 +74,7 @@ def main():
 
 	driver = driver(url)
 	engine = protocon.Engine(driver, quiet=arguments.quiet)
-	for script in arguments.scripts:
-		if engine.do_load(script):
-			break
-	else:
-		engine.cmdloop()
+	engine.entry(arguments.scripts)
 
 	engine.connection.close()
 	return 0

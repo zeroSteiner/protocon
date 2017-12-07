@@ -114,6 +114,17 @@ class Engine(cmd2.Cmd):
 	def _pre_send(self, data):
 		return data
 
+	def entry(self, scripts=()):
+		"""
+		Run each of the protocon scripts specified in *scripts* and then enter
+		:py:meth:`.cmdloop` unless the engine is set to exit.
+		"""
+		for script in scripts:
+			if self.do_load(script):
+				break
+		else:
+			self.cmdloop()
+
 	def do_close(self, arguments):
 		"""Close the connection."""
 		self.connection.close()
