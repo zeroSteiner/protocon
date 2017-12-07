@@ -44,11 +44,7 @@ sys.path.append(get_path('lib'))
 import protocon
 
 def main():
-	data_path = os.path.join(os.path.expanduser('~'), '.config', 'protocon')
-	plugin_manager = protocon.PluginManager([
-		get_path('lib', 'protocon', 'plugins'),
-		os.path.join(data_path, 'plugins')
-	])
+	plugin_manager = protocon.PluginManager([os.path.join(os.path.expanduser('~'), '.config', 'protocon', 'plugins')])
 	epilog = 'target_url examples:\n'
 	for connection_driver in plugin_manager.connection_drivers.values():
 		for example in connection_driver.examples.values():

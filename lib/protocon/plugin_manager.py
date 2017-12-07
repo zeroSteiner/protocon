@@ -30,11 +30,19 @@
 #  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
+import functools
+import os
+
 import pluginbase
+
+get_path = functools.partial(os.path.join, os.path.abspath(os.path.dirname(__file__)))
 
 class PluginManager(object):
 	__slots__ = ('source', 'connection_drivers', 'transcoders')
-	def __init__(self, searchpath):
+	def __init__(self, searchpath=None):
+		searchpath = searchpath or []
+		searchpath.append(get_path('plugins'))
+
 		self.source = pluginbase.PluginBase(package='protocon.plugins').make_plugin_source(
 			searchpath=searchpath
 		)
