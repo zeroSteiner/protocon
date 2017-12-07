@@ -45,13 +45,19 @@ import crcelk
 from . import __version__
 from . import color
 from . import conversion
+from . import plugin_manager
 
 class Engine(cmd2.Cmd):
 	IOHistory = collections.namedtuple('IOHistory', ('rx', 'tx'))
 	allow_cli_args = False
 	prompt = 'pro > '
-	def __init__(self, connection, quiet=False, **kwargs):
+	def __init__(self, connection, plugins=None, quiet=False, **kwargs):
 		self.connection = connection
+		if plugins is None:
+			plugins = plugin_manager.PluginManager()
+		elif not isinstance(plugins, plugin_manager.PluginManager):
+			raise TypeError('plugins must be an instance of PluginManager')
+		self.plugins = plugins
 		# variables
 		self.crc_algorithm = 'CRC16'
 		self.encoding = 'utf-8'
