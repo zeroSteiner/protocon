@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
-#  protocon/__init__.py
+#  protocon/errors.py
 #
 #  Redistribution and use in source and binary forms, with or without
 #  modification, are permitted provided that the following conditions are
@@ -30,9 +30,14 @@
 #  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-__version__ = '1.0'
-from .color import print_error, print_good, print_status
-from .connection_driver import ConnectionDriver
-from .engine import Engine
-from .errors import ProtoconError, ProtoconDriverError
-from .plugin_manager import PluginManager
+class ProtoconError(Exception):
+	"""
+	The base exception that is inherited by all custom Protocon error classes.
+	"""
+	def __init__(self, message=''):
+		super(ProtoconError, self).__init__()
+		self.message = message
+
+
+class ProtoconDriverError(ProtoconError):
+	pass

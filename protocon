@@ -36,7 +36,6 @@ import os
 import sys
 
 import boltons.iterutils
-import boltons.urlutils
 
 get_path = functools.partial(os.path.join, os.path.abspath(os.path.dirname(__file__)))
 sys.path.append(get_path('lib'))
@@ -58,25 +57,13 @@ def main():
 	parser.epilog = epilog
 	arguments = parser.parse_args()
 
-	url = boltons.urlutils.URL(arguments.target_url)
-
-	protocon.print_status("Loaded {0:,} connection drivers".format(len(plugins.connection_drivers)))
-	if plugins.transcoders:
-		protocon.print_status("Loaded {0:,} transcode drivers".format(len(plugins.transcoders)))
-	driver = next((driver for driver in plugins.connection_drivers.values() if url.scheme in driver.schemes), None)
-	if driver is None:
-		protocon.print_error('No connection driver for scheme: ' + url.scheme)
-		return os.EX_USAGE
-	for attribute in driver.url_attributes:
-		if not getattr(url, attribute):
-			protocon.print_error('Missing required URL attribute: ' + attribute)
-			return os.EX_USAGE
-
-	driver = driver(url)
-	engine = protocon.Engine(driver, plugins=plugins, quiet=arguments.quiet)
-	engine.entry(arguments.scripts)
-
-	engine.connection.close()
+	try:
+		engine = protocon.Engine.from_url(arguments.target_url)
+	except protocon.ProtoconDriverError as error:
+		protocon.print_error('Driver error: ' + error.message)
+	else:
+		engine.entry(arguments.scripts)
+		engine.connection.close()
 	return 0
 
 if __name__ == '__main__':

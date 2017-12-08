@@ -41,10 +41,12 @@ import traceback
 
 import cmd2
 import crcelk
+import boltons.urlutils
 
 from . import __version__
 from . import color
 from . import conversion
+from . import errors
 from . import plugin_manager
 
 class Engine(cmd2.Cmd):
@@ -119,6 +121,27 @@ class Engine(cmd2.Cmd):
 
 	def _pre_send(self, data):
 		return data
+
+	@classmethod
+	def from_url(cls, url, plugins=None, **kwargs):
+		if plugins is None:
+			plugins = plugin_manager.PluginManager()
+		elif not isinstance(plugins, plugin_manager.PluginManager):
+			raise TypeError('plugins must be an instance of PluginManager')
+
+		url = boltons.urlutils.URL(url)
+		color.print_status("Loaded {0:,} connection drivers".format(len(plugins.connection_drivers)))
+		if plugins.transcoders:
+			color.print_status("Loaded {0:,} transcode drivers".format(len(plugins.transcoders)))
+		driver = next((driver for driver in plugins.connection_drivers.values() if url.scheme in driver.schemes), None)
+		if driver is None:
+			raise errors.ProtoconDriverError('no connection driver for scheme: ' + url.scheme)
+		for attribute in driver.url_attributes:
+			if not getattr(url, attribute):
+				raise errors.ProtoconDriverError('missing required url attribute: ' + attribute)
+
+		driver = driver(url)
+		return cls(driver, plugins=plugins, **kwargs)
 
 	def entry(self, scripts=()):
 		"""
