@@ -54,6 +54,7 @@ class Engine(cmd2.Cmd):
 	allow_cli_args = False
 	prompt = 'pro > '
 	def __init__(self, connection, plugins=None, quiet=False, **kwargs):
+		self.exclude_from_help = ['do_eof', 'do_eos', 'do_quit']
 		self.connection = connection
 		if plugins is None:
 			plugins = plugin_manager.PluginManager()
@@ -159,6 +160,10 @@ class Engine(cmd2.Cmd):
 		self.connection.close()
 		self.pstatus('The connection has been closed')
 		return True
+
+	def do_exit(self, arg):
+		"""Exit the protocon engine."""
+		return super(Engine, self).do_quit(arg)
 
 	@cmd2.options(
 		[cmd2.make_option('-f', '--file', action='store', type='str', help='write the received data to the file')],
