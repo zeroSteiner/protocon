@@ -72,7 +72,7 @@ setup(
 	description=DESCRIPTION,
 	long_description=long_description,
 	url='https://github.com/zeroSteiner/protocon',
-	license='GPLv3',
+	license='BSD',
 	install_requires=requirements,
 	package_dir={'': 'lib'},
 	packages=find_packages('lib'),
