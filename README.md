@@ -57,7 +57,7 @@ now: hex
 For more examples of resource files, see the [examples directory][2].
 
 ## Credits
- - Spencer McIntyre - zeroSteiner ([@zeroSteiner][3])
+  - Spencer McIntyre - zeroSteiner ([\@zeroSteiner][3])
 
 [1]: https://asciinema.org/a/153917
 [2]: https://github.com/zeroSteiner/protocon/tree/master/examples
