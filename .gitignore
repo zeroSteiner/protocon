@@ -1,0 +1,5 @@
+*.py[cod]
+build/*
+dist/*
+lib/protocon/__pycache__/*
+lib/protocon.egg-info/*
