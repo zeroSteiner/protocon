@@ -3,6 +3,8 @@ Protocon is a socket-centric framework for rapidly prototyping connections
 through simple send and receive commands. Think socat with pretty hex output
 and more send / receive automation control.
 
+[![asciicast](https://asciinema.org/a/153917.png)][1]
+
 ## Installing
 Protocon requires Python 3.4+ and can be installed via pip using the command
 `python3 -m pip install protocon`.
@@ -52,12 +54,10 @@ now: hex
 [*] The connection has been closed
 ```
 
-For more examples of resource files, see the [examples directory][1].
-
-## Demonstration
-[![asciicast](https://asciinema.org/a/153917.png)](https://asciinema.org/a/153917)
+For more examples of resource files, see the [examples directory][2].
 
 ## Credits
  - Spencer McIntyre - zeroSteiner ([@zeroSteiner](https://twitter.com/zeroSteiner))
 
-[1]: https://github.com/zeroSteiner/protocon/tree/master/examples
+[1]: https://asciinema.org/a/153917
+[2]: https://github.com/zeroSteiner/protocon/tree/master/examples
