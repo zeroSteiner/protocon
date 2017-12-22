@@ -1,6 +1,6 @@
-boltons
-cmd2
-crcelk
-ipython
-pyserial
-termcolor
+boltons>=17.1.0
+cmd2>=0.7.8
+crcelk>=1.2
+ipython>=6.2.1
+pyserial>=3.4
+termcolor>=1.1.0

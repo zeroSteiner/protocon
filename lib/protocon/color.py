@@ -48,7 +48,6 @@ PREFIX_STATUS = colored_prefix(PREFIX_STATUS_RAW, 'blue')
 PREFIX_WARNING_RAW = '[!] '
 PREFIX_WARNING = colored_prefix(PREFIX_WARNING_RAW, 'yellow')
 
-
 def print_hexdump(data, stream=None, encoding='utf-8'):
 	if not stream:
 		stream = sys.stdout
