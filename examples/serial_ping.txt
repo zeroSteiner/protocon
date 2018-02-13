@@ -1,0 +1,5 @@
+# example that sends CRLF to see if a response is received
+send \r\n
+send \r\n
+recv_time 2
+close
