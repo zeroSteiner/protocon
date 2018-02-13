@@ -35,8 +35,8 @@ import re
 
 ENCODINGS = ('base16', 'base64', 'hex', 'utf-8', 'utf-16', 'utf-16be', 'utf-16le', 'utf-32', 'utf-32be', 'utf-32le')
 
-def _decodestr_repl(match):
-	match = match.group(1)
+def _decodestr_repl(match, encoding='utf-8'):
+	match = match.group(1).decode(encoding)
 	if match == b'n':
 		return b'\n'
 	elif match == b'r':
