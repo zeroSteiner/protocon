@@ -30,6 +30,7 @@
 #  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
+import argparse
 import ast
 import collections
 import datetime
@@ -155,7 +156,7 @@ class Engine(cmd2.Cmd):
 		else:
 			self.cmdloop()
 
-	def do_close(self, arguments):
+	def do_close(self, opts):
 		"""Close the connection."""
 		self.connection.close()
 		self.pstatus('The connection has been closed')
@@ -165,49 +166,51 @@ class Engine(cmd2.Cmd):
 		"""Exit the protocon engine."""
 		return super(Engine, self).do_quit(arg)
 
-	@cmd2.options(
-		[cmd2.make_option('-f', '--file', action='store', type='str', help='write the received data to the file')],
-		arg_desc='size'
-	)
-	def do_recv_size(self, arguments, opts):
+	argparser = argparse.ArgumentParser()
+	argparser.add_argument('-f', '--file', help='write the received data to the file')
+	argparser.add_argument('size', help='the number of bytes to receive')
+	@cmd2.with_argparser(argparser)
+	def do_recv_size(self, opts):
 		"""Receive the specified number of bytes from the endpoint."""
-		size = conversion.eval_token(arguments[0])
+		size = conversion.eval_token(opts.size)
 		if not isinstance(size, int):
 			self.pwarning('Command Error: recv_size must specify a valid size')
 			return False
 		self._post_recv(self.connection.recv_size(size), opts)
 		return False
 
-	@cmd2.options(
-		[cmd2.make_option('-f', '--file', action='store', type='str', help='write the received data to the file')],
-		arg_desc='time'
-	)
-	def do_recv_time(self, arguments, opts):
+	argparser = argparse.ArgumentParser()
+	argparser.add_argument('-f', '--file', help='write the received data to the file')
+	argparser.add_argument('time', help='the amount of time in seconds to receive data for')
+	@cmd2.with_argparser(argparser)
+	def do_recv_time(self, opts):
 		"""Receive data for the specified amount of seconds."""
-		timeout = conversion.eval_token(arguments[0])
+		timeout = conversion.eval_token(opts.time)
 		if not isinstance(timeout, (float, int)):
 			self.pwarning('Command Error: recv_time must specify a valid timeout')
 			return False
 		self._post_recv(self.connection.recv_timeout(timeout), opts)
 		return False
 
-	@cmd2.options(
-		[cmd2.make_option('-f', '--file', action='store', type='str', help='write the received data to the file')],
-		arg_desc='terminator'
-	)
-	def do_recv_until(self, arguments, opts):
+	argparser = argparse.ArgumentParser()
+	argparser.add_argument('-f', '--file', help='write the received data to the file')
+	argparser.add_argument('terminator', help='the byte sequence to receive data until')
+	@cmd2.with_argparser(argparser)
+	def do_recv_until(self, opts):
 		"""Receive data until the specified terminator is received."""
-		terminator = self.decode(arguments[0], 'utf-8')
+		terminator = self.decode(opts.terminator, 'utf-8')
 		if not terminator:
 			self.pwarning('Command Error: recv_until must specify a valid terminator')
 			return False
 		self._post_recv(self.connection.recv_until(terminator), opts)
 		return False
 
-	@cmd2.options([], arg_desc='data')
-	def do_send(self, arguments, _opts):
+	argparser = argparse.ArgumentParser()
+	argparser.add_argument('data', help='the data to send to the remote end')
+	@cmd2.with_argparser(argparser)
+	def do_send(self, opts):
 		"""Send the specified data."""
-		data = self.decode(arguments[0])
+		data = self.decode(opts.data)
 		data = self._pre_send(data)
 		self.connection.send(data)
 		self._post_send(data)
