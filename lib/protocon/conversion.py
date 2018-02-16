@@ -37,11 +37,11 @@ ENCODINGS = ('base16', 'base64', 'hex', 'utf-8', 'utf-16', 'utf-16be', 'utf-16le
 
 def _decodestr_repl(match, encoding='utf-8'):
 	match = match.group(1).decode(encoding)
-	if match == b'n':
+	if match == 'n':
 		return b'\n'
-	elif match == b'r':
+	elif match == 'r':
 		return b'\r'
-	elif match == b't':
+	elif match == 't':
 		return b'\t'
 	elif match[0] == 'x':
 		return bytes.fromhex(match[1:3])
