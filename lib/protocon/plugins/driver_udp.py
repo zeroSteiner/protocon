@@ -35,22 +35,22 @@ import select
 import time
 
 import protocon
-import protocon.conversion as conversion
 
 class ConnectionDriver(protocon.ConnectionDriver):
 	examples = {
 		'udp': 'udp://1.2.3.4:123',
-		'udp4': 'udp4://1.2.3.4:123'
+		'udp4': 'udp4://1.2.3.4:123/?size=8192'
 	}
 	schemes = ('udp', 'udp4', 'udp6')
 	url_attributes = ('host', 'port',)
-	default_settings = {
-		'size': 8192
-	}
 	def __init__(self, *args, **kwargs):
 		super(ConnectionDriver, self).__init__(*args, **kwargs)
 		self._connection = None
-		self.size = self.default_settings['size']
+
+		ConnectionDriverSetting = protocon.ConnectionDriverSetting
+		self.set_settings_from_url((
+			ConnectionDriverSetting(name='size', default_value=8192, type=int),
+		))
 
 	def _recv_size(self, size):
 		return self._connection.recvfrom(size)[0]
@@ -60,9 +60,6 @@ class ConnectionDriver(protocon.ConnectionDriver):
 			self._connection = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 		elif self.url.scheme == 'udp6':
 			self._connection = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
-		self.size = conversion.eval_token(self.url.query_params.get('size', str(self.default_settings['size'])))
-		if not isinstance(self.size, int):
-			raise TypeError('size must be an integer')
 		self.connected = True
 
 	def recv_size(self, size):
@@ -78,14 +75,14 @@ class ConnectionDriver(protocon.ConnectionDriver):
 		while remaining > 0:
 			start_time = time.time()
 			if _select(remaining):
-				data += self._recv_size(self.size)
+				data += self._recv_size(self.settings['size'])
 			remaining -= time.time() - start_time
 		return data
 
 	def recv_until(self, terminator):
 		data = b''
 		while not terminator in data:
-			data += self._recv_size(self.size)
+			data += self._recv_size(self.settings['size'])
 		return data.split(terminator, 1)[0] + terminator
 
 	def send(self, data):

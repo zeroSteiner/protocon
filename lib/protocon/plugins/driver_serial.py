@@ -36,7 +36,6 @@ import time
 import serial
 
 import protocon
-import protocon.conversion as conversion
 
 BAUDRATES = (
 	50, 75, 110, 134, 150, 200, 300, 600, 1200, 1800, 2400, 4800, 9600, 19200, 38400, 57600, 115200,
@@ -49,16 +48,17 @@ class ConnectionDriver(protocon.ConnectionDriver):
 	}
 	schemes = ('serial',)
 	url_attributes = ('path',)
-	default_settings = {
-		'baudrate': 9600,
-		'bytesize': 8,
-		'parity': 'N',
-		'stopbits': serial.STOPBITS_ONE,
-	}
 	def __init__(self, *args, **kwargs):
 		super(ConnectionDriver, self).__init__(*args, **kwargs)
 		self._connection = None
-		self.settings = {}
+
+		ConnectionDriverSetting = protocon.ConnectionDriverSetting
+		self.set_settings_from_url((
+			ConnectionDriverSetting(name='baudrate', default_value=9600, type=int, choices=BAUDRATES),
+			ConnectionDriverSetting(name='bytesize', default_value=8, type=int, choices=(5, 6, 7, 8)),
+			ConnectionDriverSetting(name='parity', default_value='N', choices=serial.PARITY_NAMES.keys()),
+			ConnectionDriverSetting(name='stopbits', default_value=1, type=float, choices=(1, 1,5, 2))
+		))
 
 	def _recv_size(self, size):
 		return self._connection.read(size)
@@ -68,27 +68,6 @@ class ConnectionDriver(protocon.ConnectionDriver):
 		super(ConnectionDriver, self).close()
 
 	def open(self):
-		self.settings.update(self.default_settings)
-		query_params = {}
-		query_params.update(self.url.query_params.items())
-
-		setting_values = {
-			'baudrate': BAUDRATES,
-			'bytesize': (5, 6, 7, 8),
-			'parity': serial.PARITY_NAMES.keys(),
-			'stopbits': (1, 1.5, 2),
-		}
-
-		for setting, possible_values in setting_values.items():
-			if setting not in query_params:
-				continue
-			value = conversion.eval_token(query_params.pop(setting))
-			if value not in possible_values:
-				raise ValueError("unsupported value for {0}: {1!r}".format(setting, value))
-			self.settings[setting] = value
-		if query_params:
-			raise ValueError("unsupported option: {0}".format(tuple(query_params.keys())[0]))
-
 		self._connection = serial.Serial(self.url.path, **self.settings)
 		self._connection.setRTS(True)
 		self._connection.setDTR(False)

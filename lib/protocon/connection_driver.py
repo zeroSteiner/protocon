@@ -33,6 +33,26 @@
 from . import color
 from . import errors
 
+def get_settings_from_url(url, setting_defs):
+	settings = {}
+	query_params = dict(url.query_params)
+
+	for setting_def in setting_defs:
+		value = query_params.pop(setting_def.name, (setting_def.default_value,))
+		value = value[-1]
+		if value is not None:
+			value = setting_def.type(value)
+			if setting_def.choices and not value in setting_def.choices:
+				raise ValueError("{0!r} is not a valid option for: {1}".format(value, setting_def.name))
+		settings[setting_def.name] = value
+
+	query_params = tuple(query_params.keys())
+	if len(query_params) > 1:
+		raise ValueError('unknown settings: ' + ', '.join(query_params))
+	elif len(query_params) == 1:
+		raise ValueError('unknown setting: ' + query_params[0])
+	return settings
+
 class ConnectionDriver(object):
 	examples = {}
 	schemes = ()
@@ -44,9 +64,13 @@ class ConnectionDriver(object):
 		self.url = url
 		self.connected = False
 		self.print_driver = None
+		self.settings = {}
 
 	def close(self):
 		self.connected = False
+
+	def set_settings_from_url(self, setting_defs):
+		self.settings = get_settings_from_url(self.url, setting_defs)
 
 	def open(self):
 		self.connected = True
@@ -77,3 +101,11 @@ class ConnectionDriver(object):
 
 	def print_warning(self, msg):
 		return (self.print_warning or color).print_warning(msg)
+
+class ConnectionDriverSetting(object):
+	__slots__ = ('name', 'default_value', 'type', 'choices')
+	def __init__(self, name, default_value=None, type=str, choices=None):
+		self.name = name
+		self.default_value = default_value
+		self.type = type or str
+		self.choices = choices

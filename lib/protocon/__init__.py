@@ -32,7 +32,7 @@
 
 __version__ = '1.1.0'
 from .color import print_error, print_good, print_status
-from .connection_driver import ConnectionDriver
+from .connection_driver import ConnectionDriver, ConnectionDriverSetting
 from .engine import Engine
 from .errors import ProtoconError, ProtoconDriverError
 from .plugin_manager import PluginManager
