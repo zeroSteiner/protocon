@@ -45,7 +45,6 @@ class ConnectionDriver(protocon.ConnectionDriver):
 	url_attributes = ('host', 'port',)
 	def __init__(self, *args, **kwargs):
 		super(ConnectionDriver, self).__init__(*args, **kwargs)
-		self._connection = None
 
 		ConnectionDriverSetting = protocon.ConnectionDriverSetting
 		self.set_settings_from_url((

@@ -62,6 +62,7 @@ class ConnectionDriver(object):
 			if not getattr(url, attribute):
 				raise errors.ProtoconDriverError('missing required url attribute: ' + attribute)
 		self.url = url
+		self._connection = None
 		self.connected = False
 		self.print_driver = None
 		self.settings = {}
@@ -109,3 +110,6 @@ class ConnectionDriverSetting(object):
 		self.default_value = default_value
 		self.type = type or str
 		self.choices = choices
+
+	def __repr__(self):
+		return "<{0} name={1!r} default_value={2!r} >".format(self.__class__.__name__, self.name, self.default_value)
