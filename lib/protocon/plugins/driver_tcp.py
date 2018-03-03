@@ -45,13 +45,7 @@ class ConnectionDriver(protocon.ConnectionDriver):
 	url_attributes = ('host', 'port',)
 	def __init__(self, *args, **kwargs):
 		super(ConnectionDriver, self).__init__(*args, **kwargs)
-		if self.url.scheme in ('tcp', 'tcp4'):
-			self._connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-			self._connection.connect((self.url.host, self.url.port))
-		elif self.url.scheme == 'tcp6':
-			self._connection = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
-			self._connection.connect((self.url.host, self.url.port))
-		self.connected = True
+		self._connection = None
 
 	def _recv_size(self, size):
 		data = self._connection.recv(size)
@@ -62,6 +56,15 @@ class ConnectionDriver(protocon.ConnectionDriver):
 	def close(self):
 		self._connection.close()
 		super(ConnectionDriver, self).close()
+
+	def open(self):
+		if self.url.scheme in ('tcp', 'tcp4'):
+			self._connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+			self._connection.connect((self.url.host, self.url.port))
+		elif self.url.scheme == 'tcp6':
+			self._connection = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+			self._connection.connect((self.url.host, self.url.port))
+		self.connected = True
 
 	def recv_size(self, size):
 		data = b''

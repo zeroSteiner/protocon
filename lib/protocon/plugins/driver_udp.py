@@ -44,19 +44,26 @@ class ConnectionDriver(protocon.ConnectionDriver):
 	}
 	schemes = ('udp', 'udp4', 'udp6')
 	url_attributes = ('host', 'port',)
+	default_settings = {
+		'size': 8192
+	}
 	def __init__(self, *args, **kwargs):
 		super(ConnectionDriver, self).__init__(*args, **kwargs)
+		self._connection = None
+		self.size = self.default_settings['size']
+
+	def _recv_size(self, size):
+		return self._connection.recvfrom(size)[0]
+
+	def open(self):
 		if self.url.scheme in ('udp', 'udp4'):
 			self._connection = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 		elif self.url.scheme == 'udp6':
 			self._connection = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
-		self.size = conversion.eval_token(self.url.query_params.get('size', '8192'))
+		self.size = conversion.eval_token(self.url.query_params.get('size', str(self.default_settings['size'])))
 		if not isinstance(self.size, int):
 			raise TypeError('size must be an integer')
 		self.connected = True
-
-	def _recv_size(self, size):
-		return self._connection.recvfrom(size)[0]
 
 	def recv_size(self, size):
 		data = b''

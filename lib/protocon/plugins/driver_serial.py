@@ -57,7 +57,17 @@ class ConnectionDriver(protocon.ConnectionDriver):
 	}
 	def __init__(self, *args, **kwargs):
 		super(ConnectionDriver, self).__init__(*args, **kwargs)
+		self._connection = None
 		self.settings = {}
+
+	def _recv_size(self, size):
+		return self._connection.read(size)
+
+	def close(self):
+		self._connection.close()
+		super(ConnectionDriver, self).close()
+
+	def open(self):
 		self.settings.update(self.default_settings)
 		query_params = {}
 		query_params.update(self.url.query_params.items())
@@ -70,10 +80,10 @@ class ConnectionDriver(protocon.ConnectionDriver):
 		}
 
 		for setting, possible_values in setting_values.items():
-			if not setting in query_params:
+			if setting not in query_params:
 				continue
 			value = conversion.eval_token(query_params.pop(setting))
-			if not value in possible_values:
+			if value not in possible_values:
 				raise ValueError("unsupported value for {0}: {1!r}".format(setting, value))
 			self.settings[setting] = value
 		if query_params:
@@ -83,13 +93,6 @@ class ConnectionDriver(protocon.ConnectionDriver):
 		self._connection.setRTS(True)
 		self._connection.setDTR(False)
 		self.connected = True
-
-	def _recv_size(self, size):
-		return self._connection.read(size)
-
-	def close(self):
-		self._connection.close()
-		super(ConnectionDriver, self).close()
 
 	def recv_size(self, size):
 		data = b''

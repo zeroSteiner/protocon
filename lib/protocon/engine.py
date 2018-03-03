@@ -39,6 +39,7 @@ import sys
 import textwrap
 import time
 import traceback
+import weakref
 
 import cmd2
 import crcelk
@@ -50,6 +51,8 @@ from . import conversion
 from . import errors
 from . import plugin_manager
 
+# this class includes both cmd2 style p* and generic style print_* methods for
+# compatibility with cmd2.Cmd and the ConnectionDriver interface
 class Engine(cmd2.Cmd):
 	IOHistory = collections.namedtuple('IOHistory', ('rx', 'tx'))
 	allow_cli_args = False
@@ -87,7 +90,11 @@ class Engine(cmd2.Cmd):
 		super(Engine, self).__init__(use_ipython=True, **kwargs)
 		self.exclude_from_help.append('do__relative_load')
 		self.pgood("Initialized protocon engine v{0} at {1:%Y-%m-%d %H:%M:%S}".format(__version__, datetime.datetime.now()))
-		self.pgood('Connected to: ' + connection.url.to_text())
+
+		self.connection.print_driver = weakref.proxy(self)
+		if not self.connection.connected:
+			self.connection.open()
+		self.pgood('Connected to: ' + self.connection.url.to_text())
 
 	def _set_enumeration(self, name, choices, old=None, new=None):
 		if new in choices:
@@ -266,13 +273,6 @@ class Engine(cmd2.Cmd):
 			msg = color.PREFIX_STATUS_RAW + msg
 			sys.stderr.write("{}\n".format(msg))
 
-	def pgood(self, msg, end='\n'):
-		if self.colors:
-			msg = color.PREFIX_GOOD + msg
-		else:
-			msg = color.PREFIX_GOOD_RAW + msg
-		super(Engine, self).poutput(msg, end=end)
-
 	def postcmd(self, stop, line):
 		if stop:
 			return True
@@ -281,16 +281,33 @@ class Engine(cmd2.Cmd):
 			return True
 		return False
 
-	def pstatus(self, msg, end='\n'):
+	def print_error(self, msg, end='\n'):
+		if self.colors:
+			msg = color.PREFIX_ERROR + msg
+		else:
+			msg = color.PREFIX_ERROR_RAW + msg
+		super(Engine, self).poutput(msg, end=end)
+
+	def print_good(self, msg, end='\n'):
+		if self.colors:
+			msg = color.PREFIX_GOOD + msg
+		else:
+			msg = color.PREFIX_GOOD_RAW + msg
+		super(Engine, self).poutput(msg, end=end)
+	pgood = print_good
+
+	def print_status(self, msg, end='\n'):
 		if self.colors:
 			msg = color.PREFIX_STATUS + msg
 		else:
 			msg = color.PREFIX_STATUS_RAW + msg
 		super(Engine, self).poutput(msg, end=end)
+	pstatus = print_status
 
-	def pwarning(self, msg, end='\n'):
+	def print_warning(self, msg, end='\n'):
 		if self.colors:
 			msg = color.PREFIX_WARNING + msg
 		else:
 			msg = color.PREFIX_WARNING_RAW + msg
 		super(Engine, self).poutput(msg, end=end)
+	pwarning = print_warning

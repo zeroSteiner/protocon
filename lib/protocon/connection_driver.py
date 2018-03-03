@@ -30,6 +30,8 @@
 #  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
+from . import color
+
 class ConnectionDriver(object):
 	examples = {}
 	schemes = ()
@@ -37,9 +39,13 @@ class ConnectionDriver(object):
 	def __init__(self, url):
 		self.url = url
 		self.connected = False
+		self.print_driver = None
 
 	def close(self):
 		self.connected = False
+
+	def open(self):
+		self.connected = True
 
 	def recv_size(self, size):
 		raise NotImplementedError()
@@ -55,3 +61,15 @@ class ConnectionDriver(object):
 
 	def send(self, data):
 		raise NotImplementedError()
+
+	def print_error(self, msg):
+		return (self.print_driver or color).print_error(msg)
+
+	def print_good(self, msg):
+		return (self.print_driver or color).print_good(msg)
+
+	def print_status(self, msg):
+		return (self.print_status or color).print_status(msg)
+
+	def print_warning(self, msg):
+		return (self.print_warning or color).print_warning(msg)

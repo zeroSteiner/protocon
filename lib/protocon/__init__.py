@@ -30,7 +30,7 @@
 #  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-__version__ = '1.0.4'
+__version__ = '1.1.0'
 from .color import print_error, print_good, print_status
 from .connection_driver import ConnectionDriver
 from .engine import Engine
