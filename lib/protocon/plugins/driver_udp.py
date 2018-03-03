@@ -50,6 +50,9 @@ class ConnectionDriver(protocon.ConnectionDriver):
 	def _recv_size(self, size):
 		return self._connection.recvfrom(size)[0]
 
+	def _select(self, timeout):
+		return select.select([self._connection], [], [], timeout)[0]
+
 	def open(self):
 		if self.url.scheme in ('udp', 'udp4'):
 			self._connection = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -64,19 +67,18 @@ class ConnectionDriver(protocon.ConnectionDriver):
 		return data
 
 	def recv_timeout(self, timeout):
-		_select = lambda t: select.select([self._connection], [], [], t)[0]
 		remaining = timeout
 		data = b''
-		while remaining > 0:
+		while (self._select(0) or remaining > 0) and self.connected:
 			start_time = time.time()
-			if _select(remaining):
+			if self._select(max(remaining, 0)):
 				data += self._recv_size(self.settings['size'])
 			remaining -= time.time() - start_time
 		return data
 
 	def recv_until(self, terminator):
 		data = b''
-		while not terminator in data:
+		while terminator not in data:
 			data += self._recv_size(self.settings['size'])
 		return data.split(terminator, 1)[0] + terminator
 
