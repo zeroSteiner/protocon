@@ -37,10 +37,6 @@ import time
 import protocon
 
 class ConnectionDriver(protocon.ConnectionDriver):
-	examples = {
-		'tcp': 'tcp://1.2.3.4:123',
-		'tcp4': 'tcp4://1.2.3.4:123'
-	}
 	schemes = ('tcp', 'tcp4', 'tcp6')
 	url_attributes = ('host', 'port',)
 	def __init__(self, *args, **kwargs):
@@ -74,9 +70,12 @@ class ConnectionDriver(protocon.ConnectionDriver):
 			tcp_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 			tcp_sock.bind((self.url.host, self.url.port))
 			tcp_sock.listen(1)
-			self.print_status("Bound to {0}:{1}, waiting for a client to connect".format(self.url.host, self.url.port))
+			self.print_status("Bound to {0}, waiting for a client to connect".format(self.url.get_authority()))
 			self._connection, peer_address = tcp_sock.accept()
-			self.print_status("Received connection from: {0}:{1}".format(peer_address[0], peer_address[1]))
+			self.print_status("Received connection from: {0}:{1}".format(
+				'[' + peer_address[0] + ']' if tcp_sock.family == socket.AF_INET6 else peer_address[0],
+				peer_address[1]
+			))
 		self.connected = True
 
 	def recv_size(self, size):

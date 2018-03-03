@@ -54,7 +54,6 @@ def get_settings_from_url(url, setting_defs):
 	return settings
 
 class ConnectionDriver(object):
-	examples = {}
 	schemes = ()
 	url_attributes = ()
 	def __init__(self, url):

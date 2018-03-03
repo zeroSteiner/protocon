@@ -40,19 +40,23 @@ sys.path.append(get_path('lib'))
 
 import protocon
 
-def main():
-	plugins = protocon.PluginManager([os.path.join(os.path.expanduser('~'), '.config', 'protocon', 'plugins')])
-	epilog = 'target_url examples:\n'
-	for connection_driver in plugins.connection_drivers.values():
-		for example in connection_driver.examples.values():
-			epilog += "  {0}\n".format(example)
+EPILOG = """\
+target_url examples:
+  null:
+  serial:///dev/ttyUSB0?baudrate=9600&bytesize=8&parity=N&stopbits=1
+  tcp://1.2.3.4:123
+  tcp4://0.0.0.0:123/?type=server
+  udp://1.2.3.4:123
+  udp4://1.2.3.4:123/?size=8192
+"""
 
+def main():
 	parser = argparse.ArgumentParser(description='ProtoCon', conflict_handler='resolve', formatter_class=argparse.RawTextHelpFormatter)
 	parser.add_argument('-q', '--quiet', action='store_true', default=False, help='initialize quiet to True')
 	parser.add_argument('-v', '--version', action='version', version='%(prog)s Version: ' + protocon.__version__)
 	parser.add_argument('target_url', help='the connection URL')
 	parser.add_argument('scripts', metavar='script', nargs='*', help='the script to execute')
-	parser.epilog = epilog
+	parser.epilog = EPILOG
 	arguments = parser.parse_args()
 
 	try:

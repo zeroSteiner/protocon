@@ -37,10 +37,6 @@ import time
 import protocon
 
 class ConnectionDriver(protocon.ConnectionDriver):
-	examples = {
-		'udp': 'udp://1.2.3.4:123',
-		'udp4': 'udp4://1.2.3.4:123/?size=8192'
-	}
 	schemes = ('udp', 'udp4', 'udp6')
 	url_attributes = ('host', 'port',)
 	def __init__(self, *args, **kwargs):

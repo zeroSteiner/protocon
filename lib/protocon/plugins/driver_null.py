@@ -33,9 +33,6 @@
 import protocon
 
 class ConnectionDriver(protocon.ConnectionDriver):
-	examples = {
-		'null': 'null:'
-	}
 	schemes = ('null',)
 	def recv_size(self, size):
 		return b'\x00' * size

@@ -43,9 +43,6 @@ BAUDRATES = (
 )
 
 class ConnectionDriver(protocon.ConnectionDriver):
-	examples = {
-		'serial': 'serial:///dev/ttyUSB0?baudrate=9600&bytesize=8&parity=N&stopbits=1'
-	}
 	schemes = ('serial',)
 	url_attributes = ('path',)
 	def __init__(self, *args, **kwargs):
