@@ -45,7 +45,11 @@ class ConnectionDriver(protocon.ConnectionDriver):
 	url_attributes = ('host', 'port',)
 	def __init__(self, *args, **kwargs):
 		super(ConnectionDriver, self).__init__(*args, **kwargs)
-		self._connection = None
+
+		ConnectionDriverSetting = protocon.ConnectionDriverSetting
+		self.set_settings_from_url((
+			ConnectionDriverSetting(name='type', default_value='client', choices=('client', 'server')),
+		))
 
 	def _recv_size(self, size):
 		data = self._connection.recv(size)
@@ -59,11 +63,20 @@ class ConnectionDriver(protocon.ConnectionDriver):
 
 	def open(self):
 		if self.url.scheme in ('tcp', 'tcp4'):
-			self._connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-			self._connection.connect((self.url.host, self.url.port))
+			tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		elif self.url.scheme == 'tcp6':
-			self._connection = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
-			self._connection.connect((self.url.host, self.url.port))
+			tcp_sock = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+
+		if self.settings['type'] == 'client':
+			tcp_sock.connect((self.url.host, self.url.port))
+			self._connection = tcp_sock
+		elif self.settings['type'] == 'server':
+			tcp_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+			tcp_sock.bind((self.url.host, self.url.port))
+			tcp_sock.listen(1)
+			self.print_status("Bound to {0}:{1}, waiting for a client to connect".format(self.url.host, self.url.port))
+			self._connection, peer_address = tcp_sock.accept()
+			self.print_status("Received connection from: {0}:{1}".format(peer_address[0], peer_address[1]))
 		self.connected = True
 
 	def recv_size(self, size):

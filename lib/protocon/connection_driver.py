@@ -98,10 +98,10 @@ class ConnectionDriver(object):
 		return (self.print_driver or color).print_good(msg)
 
 	def print_status(self, msg):
-		return (self.print_status or color).print_status(msg)
+		return (self.print_driver or color).print_status(msg)
 
 	def print_warning(self, msg):
-		return (self.print_warning or color).print_warning(msg)
+		return (self.print_driver or color).print_warning(msg)
 
 class ConnectionDriverSetting(object):
 	__slots__ = ('name', 'default_value', 'type', 'choices')
