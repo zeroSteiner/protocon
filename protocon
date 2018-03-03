@@ -51,7 +51,7 @@ target_url examples:
 """
 
 def main():
-	parser = argparse.ArgumentParser(description='ProtoCon', conflict_handler='resolve', formatter_class=argparse.RawTextHelpFormatter)
+	parser = argparse.ArgumentParser(description='protocon', conflict_handler='resolve', formatter_class=argparse.RawTextHelpFormatter)
 	parser.add_argument('-q', '--quiet', action='store_true', default=False, help='initialize quiet to True')
 	parser.add_argument('-v', '--version', action='version', version='%(prog)s Version: ' + protocon.__version__)
 	parser.add_argument('target_url', help='the connection URL')
