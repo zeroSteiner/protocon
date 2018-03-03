@@ -35,8 +35,6 @@ import functools
 import os
 import sys
 
-import boltons.iterutils
-
 get_path = functools.partial(os.path.join, os.path.abspath(os.path.dirname(__file__)))
 sys.path.append(get_path('lib'))
 

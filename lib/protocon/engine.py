@@ -94,7 +94,7 @@ class Engine(cmd2.Cmd):
 		self.connection.print_driver = weakref.proxy(self)
 		if not self.connection.connected:
 			self.connection.open()
-		self.pgood('Connected to: ' + self.connection.url.to_text())
+		self.pgood('Successfully opened connection URL: ' + self.connection.url.to_text())
 
 	def _set_enumeration(self, name, choices, old=None, new=None):
 		if new in choices:
@@ -145,9 +145,6 @@ class Engine(cmd2.Cmd):
 		driver = next((driver for driver in plugins.connection_drivers.values() if url.scheme in driver.schemes), None)
 		if driver is None:
 			raise errors.ProtoconDriverError('no connection driver for scheme: ' + url.scheme)
-		for attribute in driver.url_attributes:
-			if not getattr(url, attribute):
-				raise errors.ProtoconDriverError('missing required url attribute: ' + attribute)
 
 		driver = driver(url)
 		return cls(driver, plugins=plugins, **kwargs)

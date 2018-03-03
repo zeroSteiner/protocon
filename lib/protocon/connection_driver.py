@@ -31,12 +31,16 @@
 #
 
 from . import color
+from . import errors
 
 class ConnectionDriver(object):
 	examples = {}
 	schemes = ()
 	url_attributes = ()
 	def __init__(self, url):
+		for attribute in self.url_attributes:
+			if not getattr(url, attribute):
+				raise errors.ProtoconDriverError('missing required url attribute: ' + attribute)
 		self.url = url
 		self.connected = False
 		self.print_driver = None
