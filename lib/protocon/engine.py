@@ -230,8 +230,13 @@ class Engine(cmd2.Cmd):
 		return False
 
 	def decode(self, data, encoding=None):
+		variables = {
+			'url.host': str(self.connection.url.host or ''),
+			'url.port': str(self.connection.url.port or ''),
+			'url.scheme': str(self.connection.url.scheme or ''),
+		}
 		encoding = encoding or self.encoding
-		return conversion.decode(data, encoding)
+		return conversion.decode(data, variables=variables, encoding=encoding)
 
 	def perror(self, errmsg, exception_type=None, traceback_war=True):
 		if self.debug:

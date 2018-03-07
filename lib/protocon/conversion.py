@@ -31,23 +31,48 @@
 #
 
 import binascii
+import functools
 import re
 
 ENCODINGS = ('base16', 'base64', 'hex', 'utf-8', 'utf-16', 'utf-16be', 'utf-16le', 'utf-32', 'utf-32be', 'utf-32le')
 
-def _decodestr_repl(match, encoding='utf-8'):
-	match = match.group(1).decode(encoding)
-	if match == 'n':
-		return b'\n'
-	elif match == 'r':
-		return b'\r'
-	elif match == 't':
-		return b'\t'
-	elif match[0] == 'x':
-		return bytes.fromhex(match[1:3])
-	raise ValueError('unknown escape sequence: ' + match)
+def _decodestr_repl(match, variables=None, encoding='utf-8'):
+	variables = variables or {}
+	prefix = b''
 
-def decode(data, encoding):
+	# process leading slashes
+	group = match.group('slashes')
+	if group:
+		prefix = b'\\' * (len(group) // 2)
+		if len(group) % 2:
+			# if the number of slash is odd, we treat this as a literal
+			return prefix + (match.group('escape') or match.group('var'))
+		# if the number is even we continue with 'prefix'
+
+	# process escape sequences
+	group = match.group('escape')
+	if group:
+		group = group.decode(encoding)
+		if group == '\\\\':
+			return prefix + b'\\'
+		if group == '\\n':
+			return prefix + b'\n'
+		elif group == '\\r':
+			return prefix + b'\r'
+		elif group == '\\t':
+			return prefix + b'\t'
+		elif group[0] == '\\x':
+			return prefix + bytes.fromhex(group[1:3])
+		raise ValueError('unknown escape sequence: ' + group)
+
+	# process variables
+	group = match.group('var')
+	if group:
+		group = group.decode(encoding)
+		return prefix + variables.get(group[2:-1], group).encode(encoding)
+	raise RuntimeError('unknown match: ' + repr(match))
+
+def decode(data, variables=None, encoding='utf-8'):
 	"""
 	Decode data to a byte string using the specified encoding.
 
@@ -59,8 +84,9 @@ def decode(data, encoding):
 	encoding = encoding.lower()
 	if encoding in ('utf-8', 'utf-16', 'utf-16be', 'utf-16le', 'utf-32', 'utf-32be', 'utf-32le'):
 		data = data.encode(encoding)
-		regex = br'(?<!\\)(?:\\\\)*\\([nrt]|x[0-9a-f][0-9a-f])'
-		data = re.sub(regex, _decodestr_repl, data)
+		#regex = br'(?<!\\)(?:\\\\)*\\([nrt]|x[0-9a-f][0-9a-f])'
+		regex = br'(?P<slashes>\\*)((?P<escape>\\[\\nrt]|x[0-9a-f][0-9a-f])|(?P<var>\$\{[a-zA-Z0-9_]+(\.[a-zA-Z0-9_]+)*\}))'
+		data = re.sub(regex, functools.partial(_decodestr_repl, variables=variables), data)
 	elif encoding == 'base64':
 		data = binascii.a2b_base64(data)
 	elif encoding in ('base16', 'hex'):
