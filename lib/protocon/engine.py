@@ -229,14 +229,15 @@ class Engine(cmd2.Cmd):
 		time.sleep(duration)
 		return False
 
-	def decode(self, data, encoding=None):
+	def decode(self, string, encoding=None):
 		variables = {
 			'url.host': str(self.connection.url.host or ''),
 			'url.port': str(self.connection.url.port or ''),
 			'url.scheme': str(self.connection.url.scheme or ''),
 		}
 		encoding = encoding or self.encoding
-		return conversion.decode(data, variables=variables, encoding=encoding)
+		string = conversion.expand(string, variables=variables, encoding=encoding)
+		return conversion.decode(string, encoding=encoding)
 
 	def perror(self, errmsg, exception_type=None, traceback_war=True):
 		if self.debug:

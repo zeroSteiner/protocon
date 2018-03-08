@@ -36,7 +36,7 @@ import re
 
 ENCODINGS = ('base16', 'base64', 'hex', 'utf-8', 'utf-16', 'utf-16be', 'utf-16le', 'utf-32', 'utf-32be', 'utf-32le')
 
-def _decodestr_repl(match, variables=None, encoding='utf-8'):
+def _expandstr_repl(match, variables=None, encoding=None):
 	variables = variables or {}
 	prefix = ''
 
@@ -62,7 +62,7 @@ def _decodestr_repl(match, variables=None, encoding='utf-8'):
 			return prefix + '\t'
 		elif group[:2] == '\\x':
 			if encoding != 'utf-8':
-				raise ValueError('can not use \\x escape sequences with encoding: ' + encoding)
+				raise ValueError('can not use \\x escape sequences with encoding: ' + repr(encoding))
 			return prefix + bytes.fromhex(group[2:4]).decode('utf-8', 'surrogateescape')
 		raise ValueError('unknown escape sequence: ' + group)
 
@@ -72,30 +72,31 @@ def _decodestr_repl(match, variables=None, encoding='utf-8'):
 		return prefix + variables.get(group[2:-1], group)
 	raise RuntimeError('unknown match: ' + repr(match))
 
-def decode(data, variables=None, encoding='utf-8'):
+def decode(string, encoding='utf-8'):
 	"""
 	Decode data to a byte string using the specified encoding.
 
-	:param str data:
+	:param str string:
 	:param str encoding:
 	:return: The decoded data.
 	:rtype: bytes
 	"""
 	encoding = encoding.lower()
-	regex = r'(?P<slashes>\\*)((?P<escape>\\([\\nrt]|x[0-9a-f][0-9a-f]))|(?P<var>\$\{[a-zA-Z0-9_]+(\.[a-zA-Z0-9_]+)*\}))'
-	data = re.sub(regex, functools.partial(_decodestr_repl, variables=variables, encoding=encoding), data)
-
 	if encoding in ('utf-8', 'utf-16', 'utf-16be', 'utf-16le', 'utf-32', 'utf-32be', 'utf-32le'):
-		data = data.encode(encoding)
+		data = string.encode(encoding)
 	elif encoding == 'base64':
-		data = binascii.a2b_base64(data)
+		data = binascii.a2b_base64(string)
 	elif encoding in ('base16', 'hex'):
-		if len(data) > 2 and re.match(r'^[a-f0-9]{2}[^a-f0-9]', data):
-			data = data.replace(data[3], '')
-		data = binascii.a2b_hex(data)
+		if len(string) > 2 and re.match(r'^[a-f0-9]{2}[^a-f0-9]', string):
+			data = string.replace(string[3], '')
+		data = binascii.a2b_hex(string)
 	else:
 		raise ValueError('unsupported encoding: ' + encoding)
 	return data
+
+def expand(string, variables=None, encoding=None):
+	regex = r'(?P<slashes>\\*)((?P<escape>\\([\\nrt]|x[0-9a-f][0-9a-f]))|(?P<var>\$\{[a-zA-Z0-9_]+(\.[a-zA-Z0-9_]+)*\}))'
+	return re.sub(regex, functools.partial(_expandstr_repl, variables=variables, encoding=encoding), string)
 
 def eval_token(value):
 	if value.lower() == 'false':
