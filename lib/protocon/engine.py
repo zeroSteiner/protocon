@@ -232,8 +232,10 @@ class Engine(cmd2.Cmd):
 	def decode(self, string, encoding=None):
 		variables = {
 			'url.host': str(self.connection.url.host or ''),
+			'url.password': str(self.connection.url.password or ''),
 			'url.port': str(self.connection.url.port or ''),
 			'url.scheme': str(self.connection.url.scheme or ''),
+			'url.username': str(self.connection.url.username or ''),
 		}
 		encoding = encoding or self.encoding
 		string = conversion.expand(string, variables=variables, encoding=encoding)
