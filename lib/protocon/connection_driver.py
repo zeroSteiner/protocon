@@ -33,6 +33,14 @@
 from . import color
 from . import errors
 
+def _remaining(data, terminator):
+	# get the minimum number of bytes that must be read to ensure that data
+	# endswith terminator
+	original_length = len(terminator)
+	while not data.endswith(terminator):
+		terminator = terminator[:-1]
+	return original_length - len(terminator)
+
 def get_settings_from_url(url, setting_defs):
 	settings = {}
 	query_params = dict(url.query_params)
@@ -84,7 +92,7 @@ class ConnectionDriver(object):
 	def recv_until(self, terminator):
 		data = self.recv_size(len(terminator))
 		while not data.endswith(terminator):
-			data += self.recv_size(1)
+			data += self.recv_size(_remaining(data, terminator))
 		return data
 
 	def send(self, data):
