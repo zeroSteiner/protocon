@@ -34,13 +34,13 @@ import protocon
 
 class ConnectionDriver(protocon.ConnectionDriver):
 	schemes = ('null',)
-	def recv_size(self, size):
+	def recv_size(self, size, timeout=None):
 		return b'\x00' * size
 
 	def recv_timeout(self, timeout):
 		return b'\x00'
 
-	def recv_until(self, terminator):
+	def recv_until(self, terminator, timeout=None):
 		return terminator
 
 	def send(self, data):

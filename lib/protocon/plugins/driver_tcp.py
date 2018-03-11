@@ -48,9 +48,9 @@ class ConnectionDriver(protocon.ConnectionDriver):
 			ConnectionDriverSetting(name='type', default_value='client', choices=('client', 'server')),
 		))
 
-	def _recv(self, size, timeout):
+	def _recv(self, size, timeout, terminator=None):
 		now = time.time()
-		expiration = time.time() + timeout
+		expiration = time.time() + (timeout or _inf)
 		data = b''
 		while len(data) < size and (self._select(0) or expiration >= now):
 			if not self._select(max(expiration - now, 0)):
@@ -60,6 +60,9 @@ class ConnectionDriver(protocon.ConnectionDriver):
 				self.connected = False
 				break
 			data += chunk
+			if terminator is not None and terminator in data:
+				data, terminator, _ = data.partition(terminator)
+				break
 			now = time.time()
 		return data
 
@@ -88,11 +91,14 @@ class ConnectionDriver(protocon.ConnectionDriver):
 			))
 		self.connected = True
 
-	def recv_size(self, size):
-		return self._recv(size, _inf)
+	def recv_size(self, size, timeout=None):
+		return self._recv(size, timeout)
 
 	def recv_timeout(self, timeout):
 		return self._recv(_inf, timeout)
+
+	def recv_until(self, terminator, timeout=None):
+		return self._recv(_inf, timeout, terminator=terminator)
 
 	def send(self, data):
 		self._connection.send(data)

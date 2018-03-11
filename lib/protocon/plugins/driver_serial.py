@@ -36,6 +36,8 @@ import serial
 
 import protocon
 
+_inf = float('inf')
+
 BAUDRATES = (
 	50, 75, 110, 134, 150, 200, 300, 600, 1200, 1800, 2400, 4800, 9600, 19200, 38400, 57600, 115200,
 	230400, 460800, 500000, 576000, 921600, 1000000, 1152000, 1500000, 2000000, 2500000, 3000000, 3500000, 4000000
@@ -55,8 +57,19 @@ class ConnectionDriver(protocon.ConnectionDriver):
 			ConnectionDriverSetting(name='stopbits', default_value=1, type=float, choices=(1, 1.5, 2))
 		))
 
-	def _recv_size(self, size):
-		return self._connection.read(size)
+	def _recv(self, size, timeout, terminator=None):
+		now = time.time()
+		expiration = time.time() + (timeout or _inf)
+		data = b''
+		while len(data) < size and (self._select(0) or expiration >= now):
+			if not self._select(max(expiration - now, 0)):
+				break
+			data += self._connection.read(1)
+			if terminator is not None and terminator in data:
+				data, terminator, _ = data.partition(terminator)
+				break
+			now = time.time()
+		return data
 
 	def close(self):
 		self._connection.close()
@@ -68,21 +81,14 @@ class ConnectionDriver(protocon.ConnectionDriver):
 		self._connection.setDTR(False)
 		self.connected = True
 
-	def recv_size(self, size):
-		data = b''
-		while len(data) < size:
-			data += self._recv_size(size - len(data))
-		return data
+	def recv_size(self, size, timeout=None):
+		return self._recv(size, timeout)
 
 	def recv_timeout(self, timeout):
-		remaining = timeout
-		data = b''
-		while (self._select(0) or remaining > 0) and self.connected:
-			start_time = time.time()
-			if self._select(max(remaining, 0)):
-				data += self._recv_size(1)
-			remaining -= time.time() - start_time
-		return data
+		return self._recv(_inf, timeout)
+
+	def recv_until(self, terminator, timeout=None):
+		return self._recv(_inf, timeout, terminator=terminator)
 
 	def send(self, data):
 		self._connection.write(data)

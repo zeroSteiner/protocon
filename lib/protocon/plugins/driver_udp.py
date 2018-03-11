@@ -35,6 +35,8 @@ import time
 
 import protocon
 
+_inf = float('inf')
+
 class ConnectionDriver(protocon.ConnectionDriver):
 	schemes = ('udp', 'udp4', 'udp6')
 	url_attributes = ('host', 'port',)
@@ -46,8 +48,19 @@ class ConnectionDriver(protocon.ConnectionDriver):
 			ConnectionDriverSetting(name='size', default_value=8192, type=int),
 		))
 
-	def _recv_size(self, size):
-		return self._connection.recvfrom(size)[0]
+	def _recv(self, size, timeout, terminator=None):
+		now = time.time()
+		expiration = time.time() + (timeout or _inf)
+		data = b''
+		while len(data) < size and (self._select(0) or expiration >= now):
+			if not self._select(max(expiration - now, 0)):
+				break
+			data += self._connection.recvfrom(self.settings['size'] if size == _inf else size)[0]
+			if terminator is not None and terminator in data:
+				data, terminator, _ = data.partition(terminator)
+				break
+			now = time.time()
+		return data
 
 	def open(self):
 		if self.url.scheme in ('udp', 'udp4'):
@@ -56,27 +69,14 @@ class ConnectionDriver(protocon.ConnectionDriver):
 			self._connection = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
 		self.connected = True
 
-	def recv_size(self, size):
-		data = b''
-		while len(data) < size:
-			data += self._recv_size(size - len(data))
-		return data
+	def recv_size(self, size, timeout=None):
+		return self._recv(size, timeout)
 
 	def recv_timeout(self, timeout):
-		remaining = timeout
-		data = b''
-		while (self._select(0) or remaining > 0) and self.connected:
-			start_time = time.time()
-			if self._select(max(remaining, 0)):
-				data += self._recv_size(self.settings['size'])
-			remaining -= time.time() - start_time
-		return data
+		return self._recv(_inf, timeout)
 
-	def recv_until(self, terminator):
-		data = b''
-		while terminator not in data:
-			data += self._recv_size(self.settings['size'])
-		return data.split(terminator, 1)[0] + terminator
+	def recv_until(self, terminator, timeout=None):
+		return self._recv(_inf, timeout, terminator=terminator)
 
 	def send(self, data):
 		self._connection.sendto(data, (self.url.host, self.url.port))

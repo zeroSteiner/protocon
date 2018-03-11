@@ -173,6 +173,7 @@ class Engine(cmd2.Cmd):
 
 	argparser = argparse.ArgumentParser()
 	argparser.add_argument('-f', '--file', help='write the received data to the file')
+	argparser.add_argument('-t', '--timeout', type=int, help='the timeout for the operation')
 	argparser.add_argument('size', help='the number of bytes to receive')
 	@cmd2.with_argparser(argparser)
 	def do_recv_size(self, opts):
@@ -181,7 +182,7 @@ class Engine(cmd2.Cmd):
 		if not isinstance(size, int):
 			self.pwarning('Command Error: recv_size must specify a valid size')
 			return False
-		self._post_recv(self.connection.recv_size(size), opts)
+		self._post_recv(self.connection.recv_size(size, timeout=opts.timeout), opts)
 		return False
 
 	argparser = argparse.ArgumentParser()
@@ -199,6 +200,7 @@ class Engine(cmd2.Cmd):
 
 	argparser = argparse.ArgumentParser()
 	argparser.add_argument('-f', '--file', help='write the received data to the file')
+	argparser.add_argument('-t', '--timeout', type=int, help='the timeout for the operation')
 	argparser.add_argument('terminator', help='the byte sequence to receive data until')
 	@cmd2.with_argparser(argparser)
 	def do_recv_until(self, opts):
@@ -207,7 +209,7 @@ class Engine(cmd2.Cmd):
 		if not terminator:
 			self.pwarning('Command Error: recv_until must specify a valid terminator')
 			return False
-		self._post_recv(self.connection.recv_until(terminator), opts)
+		self._post_recv(self.connection.recv_until(terminator, timeout=opts.timeout), opts)
 		return False
 
 	argparser = argparse.ArgumentParser()
