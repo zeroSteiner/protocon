@@ -30,7 +30,6 @@
 #  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-import select
 import time
 
 import serial
@@ -58,9 +57,6 @@ class ConnectionDriver(protocon.ConnectionDriver):
 
 	def _recv_size(self, size):
 		return self._connection.read(size)
-
-	def _select(self, timeout):
-		return select.select([self._connection], [], [], timeout)[0]
 
 	def close(self):
 		self._connection.close()

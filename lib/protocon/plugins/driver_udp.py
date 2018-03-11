@@ -31,7 +31,6 @@
 #
 
 import socket
-import select
 import time
 
 import protocon
@@ -49,9 +48,6 @@ class ConnectionDriver(protocon.ConnectionDriver):
 
 	def _recv_size(self, size):
 		return self._connection.recvfrom(size)[0]
-
-	def _select(self, timeout):
-		return select.select([self._connection], [], [], timeout)[0]
 
 	def open(self):
 		if self.url.scheme in ('udp', 'udp4'):

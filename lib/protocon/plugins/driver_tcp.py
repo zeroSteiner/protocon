@@ -31,7 +31,6 @@
 #
 
 import socket
-import select
 import time
 
 import protocon
@@ -52,9 +51,6 @@ class ConnectionDriver(protocon.ConnectionDriver):
 		if not data:
 			self.connected = False
 		return data
-
-	def _select(self, timeout):
-		return select.select([self._connection], [], [], timeout)[0]
 
 	def close(self):
 		self._connection.close()

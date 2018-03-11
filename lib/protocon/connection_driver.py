@@ -30,8 +30,12 @@
 #  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
+import select
+
 from . import color
 from . import errors
+
+_inf = float('inf')
 
 def _remaining(data, terminator):
 	# get the minimum number of bytes that must be read to ensure that data
@@ -74,6 +78,12 @@ class ConnectionDriver(object):
 		self.print_driver = None
 		self.settings = {}
 
+	def _select(self, timeout):
+		if self._connection is None:
+			raise RuntimeError('_select can only be used when _connection is not None')
+		timeout = None if timeout == _inf else timeout
+		return select.select([self._connection], [], [], timeout)[0]
+
 	def close(self):
 		self.connected = False
 
@@ -90,7 +100,7 @@ class ConnectionDriver(object):
 		raise NotImplementedError()
 
 	def recv_until(self, terminator):
-		data = self.recv_size(len(terminator))
+		data = b''
 		while not data.endswith(terminator):
 			data += self.recv_size(_remaining(data, terminator))
 		return data
