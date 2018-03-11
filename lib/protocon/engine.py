@@ -283,7 +283,7 @@ class Engine(cmd2.Cmd):
 		if stop:
 			return True
 		if not self.connection.connected:
-			self.perror('The remote end has closed the connection', traceback_war=False)
+			self.print_error('The remote end has closed the connection')
 			return True
 		return False
 
