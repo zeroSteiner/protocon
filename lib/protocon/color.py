@@ -49,13 +49,8 @@ PREFIX_WARNING_RAW = '[!] '
 PREFIX_WARNING = colored_prefix(PREFIX_WARNING_RAW, 'yellow')
 
 def print_hexdump(data, stream=None, encoding='utf-8'):
-	if not stream:
-		stream = sys.stdout
-	if isinstance(data, str):
-		data = data.encode(encoding)
+	stream = stream or sys.stdout
 	data = bytearray(data)
-	l = len(data)
-	i = 0
 	divider = 8
 	chunk_size = 16
 	for row, chunk in enumerate(boltons.iterutils.chunked(data, chunk_size, fill=-1)):
@@ -63,7 +58,7 @@ def print_hexdump(data, stream=None, encoding='utf-8'):
 		hex_col = ''
 		for pos, byte in enumerate(chunk):
 			hex_col += '   ' if byte == -1 else "{0:02x} ".format(byte)
-			if pos and (pos + 1) % divider == 0:
+			if divider and pos and (pos + 1) % divider == 0:
 				hex_col += ' '
 		hex_col = hex_col[:-1]
 		ascii_col = ''

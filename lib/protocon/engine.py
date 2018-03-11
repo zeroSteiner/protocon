@@ -66,6 +66,7 @@ class Engine(cmd2.Cmd):
 			raise TypeError('plugins must be an instance of PluginManager')
 		self.plugins = plugins
 		# variables
+		self.feedback_to_output = True
 		self.crc_algorithm = 'CRC16'
 		self.encoding = 'utf-8'
 		self.print_rx = True
