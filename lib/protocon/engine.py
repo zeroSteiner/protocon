@@ -114,9 +114,8 @@ class Engine(cmd2.Cmd):
 	def _post_recv(self, data, opts=None):
 		self.io_history.rx.append(data)
 		self.pstatus("RX: {0: 6} bytes (CRC: {1})".format(len(data), self._crc_string(data)))
-		if not self.print_rx:
-			return
-		color.print_hexdump(data)
+		if self.print_rx:
+			color.print_hexdump(data)
 
 		if opts and opts.file:
 			with open(opts.file, 'wb') as file_h:
@@ -125,9 +124,8 @@ class Engine(cmd2.Cmd):
 	def _post_send(self, data):
 		self.io_history.tx.append(data)
 		self.pstatus("TX: {0: 6} bytes (CRC: {1})".format(len(data), self._crc_string(data)))
-		if not self.print_tx:
-			return
-		color.print_hexdump(data)
+		if self.print_tx:
+			color.print_hexdump(data)
 
 	def _pre_send(self, data):
 		return data
