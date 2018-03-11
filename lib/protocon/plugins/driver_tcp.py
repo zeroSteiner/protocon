@@ -35,6 +35,8 @@ import time
 
 import protocon
 
+_inf = float('inf')
+
 class ConnectionDriver(protocon.ConnectionDriver):
 	schemes = ('tcp', 'tcp4', 'tcp6')
 	url_attributes = ('host', 'port',)
@@ -46,10 +48,19 @@ class ConnectionDriver(protocon.ConnectionDriver):
 			ConnectionDriverSetting(name='type', default_value='client', choices=('client', 'server')),
 		))
 
-	def _recv_size(self, size):
-		data = self._connection.recv(size)
-		if not data:
-			self.connected = False
+	def _recv(self, size, timeout):
+		now = time.time()
+		expiration = time.time() + timeout
+		data = b''
+		while len(data) < size and (self._select(0) or expiration >= now):
+			if not self._select(max(expiration - now, 0)):
+				break
+			chunk = self._connection.recv(1)
+			if not chunk:
+				self.connected = False
+				break
+			data += chunk
+			now = time.time()
 		return data
 
 	def close(self):
@@ -78,20 +89,10 @@ class ConnectionDriver(protocon.ConnectionDriver):
 		self.connected = True
 
 	def recv_size(self, size):
-		data = b''
-		while len(data) < size and self.connected:
-			data += self._recv_size(size - len(data))
-		return data
+		return self._recv(size, _inf)
 
 	def recv_timeout(self, timeout):
-		remaining = timeout
-		data = b''
-		while (self._select(0) or remaining > 0) and self.connected:
-			start_time = time.time()
-			if self._select(max(remaining, 0)):
-				data += self._recv_size(1)
-			remaining -= time.time() - start_time
-		return data
+		return self._recv(_inf, timeout)
 
 	def send(self, data):
 		self._connection.send(data)

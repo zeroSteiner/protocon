@@ -52,7 +52,7 @@ class ConnectionDriver(protocon.ConnectionDriver):
 			ConnectionDriverSetting(name='baudrate', default_value=9600, type=int, choices=BAUDRATES),
 			ConnectionDriverSetting(name='bytesize', default_value=8, type=int, choices=(5, 6, 7, 8)),
 			ConnectionDriverSetting(name='parity', default_value='N', choices=serial.PARITY_NAMES.keys()),
-			ConnectionDriverSetting(name='stopbits', default_value=1, type=float, choices=(1, 1,5, 2))
+			ConnectionDriverSetting(name='stopbits', default_value=1, type=float, choices=(1, 1.5, 2))
 		))
 
 	def _recv_size(self, size):
