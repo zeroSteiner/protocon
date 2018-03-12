@@ -33,13 +33,6 @@
 import os
 import sys
 
-base_directory = os.path.dirname(__file__)
-lib_directory = os.path.join(base_directory, 'lib')
-if os.path.isdir(os.path.join(lib_directory, 'protocon')):
-	sys.path.insert(0, lib_directory)
-
-from protocon import __version__
-
 try:
 	from setuptools import setup, find_packages
 except ImportError:
@@ -59,13 +52,9 @@ Protocon is a socket-centric framework for rapidly prototyping connections \
 through simple send and receive transcripts.\
 """
 
-with open(os.path.join(base_directory, 'requirements.txt'), 'r') as file_h:
-	requirements = file_h.readlines()
-requirements = [line.strip() for line in requirements]
-
 setup(
 	name='protocon',
-	version=__version__,
+	version='1.2.0',
 	author='Spencer McIntyre',
 	author_email='zeroSteiner@gmail.com',
 	maintainer='Spencer McIntyre',
@@ -73,7 +62,16 @@ setup(
 	long_description=long_description,
 	url='https://github.com/zeroSteiner/protocon',
 	license='BSD',
-	install_requires=requirements,
+        # these are duplicated in requirements.txt
+	install_requires=[
+		'boltons>=17.1.0',
+		'cmd2==0.8',
+		'crcelk>=1.2',
+		'ipython>=6.2.1',
+		'pluginbase>=0.5',
+		'pyserial>=3.4',
+		'termcolor>=1.1.0',
+	],
 	package_dir={'': 'lib'},
 	packages=find_packages('lib'),
 	classifiers=[

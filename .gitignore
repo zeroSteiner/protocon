@@ -3,3 +3,5 @@ build/*
 dist/*
 lib/protocon/__pycache__/*
 lib/protocon.egg-info/*
+Pipfile
+Pipfile.lock

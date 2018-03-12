@@ -1,3 +1,4 @@
+# these are duplicated in setup.py
 boltons>=17.1.0
 cmd2==0.8
 crcelk>=1.2
