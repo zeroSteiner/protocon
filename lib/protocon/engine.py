@@ -203,7 +203,7 @@ class Engine(cmd2.Cmd):
 	@cmd2.with_argparser(argparser)
 	def do_recv_until(self, opts):
 		"""Receive data until the specified terminator is received."""
-		terminator = self.decode(opts.terminator, 'utf-8')
+		terminator = self.decode(opts.terminator)
 		if not terminator:
 			self.pwarning('Command Error: recv_until must specify a valid terminator')
 			return False

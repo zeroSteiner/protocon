@@ -56,6 +56,32 @@ now: hex
 
 For more examples of resource files, see the [examples directory][2].
 
+## Data Expansion
+Data passed by the user (such as the parameter to the `send` and
+`recv_until` commands) will be expanded using a basic escape sequence.
+Additionally these sequences can be escaped by being prefixed with `\`.
+
+| Sequence | Description          |
+|----------|----------------------|
+| `\\`     | Literal backslash    |
+| `\n`     | New line             |
+| `\r`     | Carrige return       |
+| `\t`     | Tab                  |
+| `\x00`   | Literal byte `0x00`  |
+| `${var}` | Variable named `var` |
+
+### Variables
+The expansion supports variables inserted with `${var}`. The following
+variables are defined automatically.
+
+| Variable Name  | Description                     |
+|----------------|---------------------------------|
+| `url.host`     | The host portion of the URL     |
+| `url.password` | The password portion of the URL |
+| `url.port`     | The port portion of the URL     |
+| `url.scheme`   | The scheme portion of the URL   |
+| `url.username` | The username portion of the URL |
+
 ## Credits
   - Spencer McIntyre - zeroSteiner ([\@zeroSteiner][3])
 
