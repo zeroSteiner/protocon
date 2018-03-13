@@ -1,4 +1,4 @@
-# initiate a C12.18 connection and read the C12.19 table #0, this authenticates
+# Initiate a C12.18 connection and read the C12.19 table #0, this authenticates
 # with user id 30303030 and password 00000000000000000000
 
 # set the encoding to hex

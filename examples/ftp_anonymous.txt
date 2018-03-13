@@ -1,4 +1,4 @@
-# example that logs into an ftp server as an anonymous user
+# Example that logs into an FTP server as an anonymous user
 recv_until \r\n
 send USER anonymous\r\n
 recv_until \r\n

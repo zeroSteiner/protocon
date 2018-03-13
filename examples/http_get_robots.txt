@@ -1,4 +1,4 @@
-# example that makes an http get request for robots.txt
+# Example that makes an HTTP GET request for robots.txt
 send "GET /robots.txt HTTP/1.0\r\n"
 send "User-Agent: protocon\r\n"
 send "Accept: */*\r\n"
