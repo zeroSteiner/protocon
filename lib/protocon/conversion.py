@@ -65,8 +65,12 @@ def _expandstr_repl(match, variables=None, encoding=None):
 		elif group[:2] == '\\x':
 			if encoding != 'utf-8':
 				raise errors.ProtoconDataExpansionError('can not use \\x escape sequences with encoding: ' + repr(encoding))
-			return prefix + bytes.fromhex(group[2:4]).decode('utf-8', 'surrogateescape')
-		raise errors.ProtoconDataExpansionError('unknown escape sequence: ' + group)
+			elif len(group) != 4:
+				start, end = match.span()
+				raise errors.ProtoconDataExpansionError('invalid \\x escape sequence: ' + match.string[start:end + 2])
+			return prefix + bytes.fromhex(group[2:]).decode('utf-8', 'surrogateescape')
+		# return the character after the backslash, effectively treating it as a literal
+		return group[1]
 
 	# process variables
 	group = match.group('var')
@@ -103,7 +107,7 @@ def decode(string, encoding='utf-8'):
 	return data
 
 def expand(string, variables=None, encoding=None):
-	regex = r'(?P<slashes>\\*)((?P<escape>\\([\\nrt]|x[0-9a-f][0-9a-f]))|(?P<var>\$\{[a-zA-Z0-9_]+(\.[a-zA-Z0-9_]+)*\}))'
+	regex = r'(?P<slashes>\\*)((?P<escape>\\(x[0-9a-f][0-9a-f]|.))|(?P<var>\$\{[a-zA-Z0-9_]+(\.[a-zA-Z0-9_]+)*\}))'
 	return re.sub(regex, functools.partial(_expandstr_repl, variables=variables, encoding=encoding), string)
 
 def eval_token(value):
