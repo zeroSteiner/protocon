@@ -39,5 +39,11 @@ class ProtoconError(Exception):
 		self.message = message
 
 
+class ProtoconDataError(ProtoconError):
+	pass
+
+class ProtoconDataExpansionError(ProtoconDataError):
+	pass
+
 class ProtoconDriverError(ProtoconError):
 	pass

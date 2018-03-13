@@ -254,11 +254,11 @@ class Engine(cmd2.Cmd):
 				errmsg = color.PREFIX_ERROR_RAW + errmsg
 			sys.stderr.write(errmsg)
 		else:
-			errmsg = "EXCEPTION of type '{}' occurred with message: '{}'\n".format(exception_type, errmsg)
+			errmsg = ["EXCEPTION of type '{}' occurred with message:".format(exception_type), repr(getattr(errmsg, 'message', errmsg))]
 			if self.colors:
-				errmsg = color.PREFIX_ERROR + errmsg
+				errmsg = ''.join((color.PREFIX_ERROR + line + '\n' for line in errmsg))
 			else:
-				errmsg = color.PREFIX_ERROR_RAW + errmsg
+				errmsg = ''.join((color.PREFIX_ERROR_RAW + line + '\n' for line in errmsg))
 			sys.stderr.write(errmsg)
 
 		if traceback_war:

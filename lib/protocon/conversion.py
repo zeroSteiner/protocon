@@ -34,6 +34,8 @@ import binascii
 import functools
 import re
 
+from . import errors
+
 ENCODINGS = ('base16', 'base64', 'hex', 'utf-8', 'utf-16', 'utf-16be', 'utf-16le', 'utf-32', 'utf-32be', 'utf-32le')
 
 def _expandstr_repl(match, variables=None, encoding=None):
@@ -62,15 +64,19 @@ def _expandstr_repl(match, variables=None, encoding=None):
 			return prefix + '\t'
 		elif group[:2] == '\\x':
 			if encoding != 'utf-8':
-				raise ValueError('can not use \\x escape sequences with encoding: ' + repr(encoding))
+				raise errors.ProtoconDataExpansionError('can not use \\x escape sequences with encoding: ' + repr(encoding))
 			return prefix + bytes.fromhex(group[2:4]).decode('utf-8', 'surrogateescape')
-		raise ValueError('unknown escape sequence: ' + group)
+		raise errors.ProtoconDataExpansionError('unknown escape sequence: ' + group)
 
 	# process variables
 	group = match.group('var')
 	if group:
-		return prefix + variables.get(group[2:-1], group)
-	raise RuntimeError('unknown match: ' + repr(match))
+		var_name = group[2:-1]
+		var_value = variables.get(var_name)
+		if var_value is None:
+			raise errors.ProtoconDataExpansionError('undefined variable: ' + var_name)
+		return prefix + var_value
+	raise errors.ProtoconDataExpansionError('unknown match: ' + repr(match))
 
 def decode(string, encoding='utf-8'):
 	"""
