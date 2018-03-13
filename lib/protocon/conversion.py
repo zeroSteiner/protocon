@@ -88,13 +88,15 @@ def decode(string, encoding='utf-8'):
 	:rtype: bytes
 	"""
 	encoding = encoding.lower()
-	if encoding in ('utf-8', 'utf-16', 'utf-16be', 'utf-16le', 'utf-32', 'utf-32be', 'utf-32le'):
+	if encoding == 'utf-8':
+		data = string.encode('utf-8', 'surrogateescape')
+	elif encoding in ('utf-16', 'utf-16be', 'utf-16le', 'utf-32', 'utf-32be', 'utf-32le'):
 		data = string.encode(encoding)
 	elif encoding == 'base64':
 		data = binascii.a2b_base64(string)
 	elif encoding in ('base16', 'hex'):
-		if len(string) > 2 and re.match(r'^[a-f0-9]{2}[^a-f0-9]', string):
-			data = string.replace(string[3], '')
+		if len(string) > 2 and re.search(r'^[a-f0-9]{2}[^a-f0-9]', string):
+			string = string.replace(string[2], '')
 		data = binascii.a2b_hex(string)
 	else:
 		raise ValueError('unsupported encoding: ' + encoding)
