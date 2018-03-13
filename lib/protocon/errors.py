@@ -42,6 +42,9 @@ class ProtoconError(Exception):
 class ProtoconDataError(ProtoconError):
 	pass
 
+class ProtoconDataDecodeError(ProtoconDataError):
+	pass
+
 class ProtoconDataExpansionError(ProtoconDataError):
 	pass
 

@@ -99,8 +99,12 @@ def decode(string, encoding='utf-8'):
 	elif encoding == 'base64':
 		data = binascii.a2b_base64(string)
 	elif encoding in ('base16', 'hex'):
-		if len(string) > 2 and re.search(r'^[a-f0-9]{2}[^a-f0-9]', string):
+		if len(string) > 2 and re.match(r'^[0-9a-f]{2}([^0-9a-f])(([0-9a-f]{2}(\1)))*[0-9a-f]{2}$', string, re.IGNORECASE):
 			string = string.replace(string[2], '')
+		if len(string) % 2:
+			raise errors.ProtoconDataDecodeError('odd-length hex string')
+		if not re.match(r'^([0-9a-f]{2})*$', string, re.IGNORECASE):
+			raise errors.ProtoconDataDecodeError('invalid hex character found')
 		data = binascii.a2b_hex(string)
 	else:
 		raise ValueError('unsupported encoding: ' + encoding)
