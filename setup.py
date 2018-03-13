@@ -33,18 +33,20 @@
 import os
 import sys
 
+base_directory = os.path.dirname(__file__)
+
 try:
 	from setuptools import setup, find_packages
 except ImportError:
-	print('Protocon needs setuptools in order to build. Install it using')
-	print('your package manager (usually python-setuptools) or via pip (pip')
-	print('install setuptools).')
+	print('This project needs setuptools in order to build. Install it using your package')
+	print('manager (usually python-setuptools) or via pip (pip install setuptools).')
 	sys.exit(1)
 
 try:
 	import pypandoc
 	long_description = pypandoc.convert(os.path.join(base_directory, 'README.md'), 'rst')
 except (ImportError, OSError):
+	print('The pypandoc module is unavailable, can not generate the long description', file=sys.stderr)
 	long_description = None
 
 DESCRIPTION = """\
@@ -62,7 +64,7 @@ setup(
 	long_description=long_description,
 	url='https://github.com/zeroSteiner/protocon',
 	license='BSD',
-        # these are duplicated in requirements.txt
+	# these are duplicated in requirements.txt
 	install_requires=[
 		'boltons>=17.1.0',
 		'cmd2==0.8',
