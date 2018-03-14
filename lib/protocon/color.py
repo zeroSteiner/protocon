@@ -55,20 +55,23 @@ def print_hexdump(data, stream=None, encoding='utf-8'):
 	chunk_size = 16
 	for row, chunk in enumerate(boltons.iterutils.chunked(data, chunk_size, fill=-1)):
 		offset_col = "{0:04x}".format(row * chunk_size)
+		ascii_col = ''
 		hex_col = ''
+		pos = 0
 		for pos, byte in enumerate(chunk):
 			hex_col += '   ' if byte == -1 else "{0:02x} ".format(byte)
 			if divider and pos and (pos + 1) % divider == 0:
 				hex_col += ' '
-		hex_col = hex_col[:-1]
-		ascii_col = ''
-		for byte in chunk:
+
 			if byte == -1:
 				ascii_col += ' '
 			elif byte < 32 or byte > 126:
 				ascii_col += '.'
 			else:
 				ascii_col += chr(byte)
+			if divider and pos and (pos + 1) % divider == 0:
+				ascii_col += ' '
+		hex_col = hex_col[:-2 if pos and (pos + 1) % divider == 0 else -1]
 		stream.write('  '.join((offset_col, hex_col, ascii_col)) + os.linesep)
 	stream.flush()
 
