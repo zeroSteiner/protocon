@@ -50,7 +50,7 @@ class ConnectionDriver(protocon.ConnectionDriver):
 
 	def _recv(self, size, timeout, terminator=None):
 		now = time.time()
-		expiration = time.time() + (timeout or _inf)
+		expiration = _inf if timeout is None else time.time() + timeout
 		data = b''
 		while len(data) < size and (self._select(0) or expiration >= now):
 			if not self._select(max(expiration - now, 0)):
