@@ -1,0 +1,10 @@
+# Start a connection to a SOCKS5 server
+set encoding hex
+send 050100
+recv_size 2
+
+send 05020001000000000000
+recv_size -t 30 10
+recv_size -t 30 10
+
+close
