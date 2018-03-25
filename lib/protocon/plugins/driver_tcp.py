@@ -43,6 +43,7 @@ class ConnectionDriver(protocon.ConnectionDriver):
 	url_attributes = ('host', 'port',)
 	def __init__(self, *args, **kwargs):
 		super(ConnectionDriver, self).__init__(*args, **kwargs)
+		self._addrinfo = None
 
 		ConnectionDriverSetting = protocon.ConnectionDriverSetting
 		self.set_settings_from_url((
@@ -83,19 +84,19 @@ class ConnectionDriver(protocon.ConnectionDriver):
 		)
 		if not addrinfo:
 			raise protocon.ProtoconDriverError('getaddrinfo failed for the specified URL')
-		addrinfo = addrinfo[0]
-		tcp_sock = socket.socket(addrinfo.family, addrinfo.type)
-		if addrinfo.family == socket.AF_INET6 and self.settings['ip6-scope-id'] is not None:
+		self._addrinfo = addrinfo[0]
+		if self._addrinfo.family == socket.AF_INET6 and self.settings['ip6-scope-id'] is not None:
 			scope_id = self.settings['ip6-scope-id']
 			scope_id = int(scope_id) if scope_id.isdigit() else socket.if_nametoindex(scope_id)
-			addrinfo = addrinfo._replace(sockaddr=addrinfo.sockaddr[:3] + (scope_id,))
+			self._addrinfo = self._addrinfo._replace(sockaddr=self._addrinfo.sockaddr[:3] + (scope_id,))
 
+		tcp_sock = socket.socket(self._addrinfo.family, self._addrinfo.type)
 		if self.settings['type'] == 'client':
-			tcp_sock.connect(addrinfo.sockaddr)
+			tcp_sock.connect(self._addrinfo.sockaddr)
 			self._connection = tcp_sock
 		elif self.settings['type'] == 'server':
 			tcp_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-			tcp_sock.bind(addrinfo.sockaddr)
+			tcp_sock.bind(self._addrinfo.sockaddr)
 			tcp_sock.listen(1)
 			self.print_status("Bound to {0}, waiting for a client to connect".format(self.url.authority()))
 			self._connection, peer_address = tcp_sock.accept()

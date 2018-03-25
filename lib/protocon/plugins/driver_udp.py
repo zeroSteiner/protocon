@@ -42,10 +42,12 @@ class ConnectionDriver(protocon.ConnectionDriver):
 	url_attributes = ('host', 'port',)
 	def __init__(self, *args, **kwargs):
 		super(ConnectionDriver, self).__init__(*args, **kwargs)
+		self._addrinfo = None
 
 		ConnectionDriverSetting = protocon.ConnectionDriverSetting
 		self.set_settings_from_url((
-			ConnectionDriverSetting(name='size', default_value=8192, type=int),
+			ConnectionDriverSetting(name='ip6-scope-id'),
+			ConnectionDriverSetting(name='size', default_value=0xffff, type=int),
 		))
 
 	def _recv(self, size, timeout, terminator=None):
@@ -63,10 +65,23 @@ class ConnectionDriver(protocon.ConnectionDriver):
 		return data
 
 	def open(self):
-		if self.url.scheme in ('udp', 'udp4'):
-			self._connection = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-		elif self.url.scheme == 'udp6':
-			self._connection = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
+		family = {'udp': socket.AF_UNSPEC, 'udp4': socket.AF_INET, 'udp6': socket.AF_INET6}[self.url.scheme]
+		addrinfo = protocon.utilities.getaddrinfos(
+			self.url.host,
+			self.url.port,
+			family,
+			type=socket.SOCK_DGRAM,
+			proto=socket.IPPROTO_UDP
+		)
+		if not addrinfo:
+			raise protocon.ProtoconDriverError('getaddrinfo failed for the specified URL')
+		self._addrinfo = addrinfo[0]
+		if self._addrinfo.family == socket.AF_INET6 and self.settings['ip6-scope-id'] is not None:
+			scope_id = self.settings['ip6-scope-id']
+			scope_id = int(scope_id) if scope_id.isdigit() else socket.if_nametoindex(scope_id)
+			self._addrinfo = self._addrinfo._replace(sockaddr=self._addrinfo.sockaddr[:3] + (scope_id,))
+
+		self._connection = socket.socket(self._addrinfo.family, self._addrinfo.type)
 		self.connected = True
 
 	def recv_size(self, size, timeout=None):
@@ -79,4 +94,4 @@ class ConnectionDriver(protocon.ConnectionDriver):
 		return self._recv(_inf, timeout, terminator=terminator)
 
 	def send(self, data):
-		self._connection.sendto(data, (self.url.host, self.url.port))
+		self._connection.sendto(data, self._addrinfo.sockaddr)
