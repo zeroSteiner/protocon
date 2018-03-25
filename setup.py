@@ -60,6 +60,7 @@ setup(
 	author='Spencer McIntyre',
 	author_email='zeroSteiner@gmail.com',
 	maintainer='Spencer McIntyre',
+	maintainer_email='zeroSteiner@gmail.com',
 	description=DESCRIPTION,
 	long_description=long_description,
 	url='https://github.com/zeroSteiner/protocon',
