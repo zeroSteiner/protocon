@@ -30,7 +30,9 @@
 #  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
+import ast
 import collections
+import functools
 import socket
 
 AddrInfo = collections.namedtuple('AddrInfo', ('family', 'type', 'proto', 'canonname', 'sockaddr'))
@@ -44,3 +46,15 @@ def getaddrinfos(host, port=0, family=0, type=0, proto=0, flags=0):
 	:rtype: tuple
 	"""
 	return tuple(AddrInfo(*result) for result in socket.getaddrinfo(host, port, family=family, type=type, proto=proto, flags=flags))
+
+def _literal_type(type_, value):
+	try:
+		value = ast.literal_eval(value)
+	except (SyntaxError, ValueError):
+		raise TypeError('value is not a ' + type_.__name__) from None
+	if not isinstance(value, type_):
+		raise TypeError('value is not a ' + type_.__name__)
+	return value
+
+def literal_type(type_):
+	return functools.partial(_literal_type, type_)

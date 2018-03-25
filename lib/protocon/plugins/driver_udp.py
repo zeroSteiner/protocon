@@ -34,6 +34,7 @@ import socket
 import time
 
 import protocon
+import protocon.utilities
 
 _inf = float('inf')
 
@@ -47,7 +48,7 @@ class ConnectionDriver(protocon.ConnectionDriver):
 		ConnectionDriverSetting = protocon.ConnectionDriverSetting
 		self.set_settings_from_url((
 			ConnectionDriverSetting(name='ip6-scope-id'),
-			ConnectionDriverSetting(name='size', default_value=0xffff, type=int),
+			ConnectionDriverSetting(name='size', default_value=0xffff, type=protocon.utilities.literal_type(int)),
 		))
 
 	def _recv(self, size, timeout, terminator=None):
