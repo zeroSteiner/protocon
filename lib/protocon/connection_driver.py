@@ -47,14 +47,13 @@ def _remaining(data, terminator):
 
 def get_settings_from_url(url, setting_defs):
 	settings = {}
-	query_params = dict(url.query_params)
+	query_params = dict(url.query)
 
 	for setting_def in setting_defs:
-		value = query_params.pop(setting_def.name, (setting_def.default_value,))
-		value = value[-1]
+		value = query_params.pop(setting_def.name, setting_def.default_value)
 		if value is not None:
 			value = setting_def.type(value)
-			if setting_def.choices and not value in setting_def.choices:
+			if setting_def.choices and value not in setting_def.choices:
 				raise ValueError("{0!r} is not a valid option for: {1}".format(value, setting_def.name))
 		settings[setting_def.name] = value
 

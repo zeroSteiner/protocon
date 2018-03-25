@@ -43,7 +43,7 @@ import weakref
 
 import cmd2
 import crcelk
-import boltons.urlutils
+import hyperlink
 
 from . import __version__
 from . import color
@@ -137,7 +137,8 @@ class Engine(cmd2.Cmd):
 		elif not isinstance(plugins, plugin_manager.PluginManager):
 			raise TypeError('plugins must be an instance of PluginManager')
 
-		url = boltons.urlutils.URL(url)
+		if isinstance(url, str):
+			url = hyperlink.URL.from_text(url)
 		color.print_status("Loaded {0:,} connection drivers".format(len(plugins.connection_drivers)))
 		if plugins.transcoders:
 			color.print_status("Loaded {0:,} transcode drivers".format(len(plugins.transcoders)))
@@ -231,12 +232,13 @@ class Engine(cmd2.Cmd):
 		return False
 
 	def decode(self, string, encoding=None):
+		username, _, password = self.connection.url.userinfo.partition(':')
 		variables = {
-			'url.host': str(self.connection.url.host or ''),
-			'url.password': str(self.connection.url.password or ''),
+			'url.host': self.connection.url.host,
+			'url.password': password,
 			'url.port': str(self.connection.url.port or ''),
-			'url.scheme': str(self.connection.url.scheme or ''),
-			'url.username': str(self.connection.url.username or ''),
+			'url.scheme': self.connection.url.scheme,
+			'url.username': username,
 		}
 		encoding = encoding or self.encoding
 		string = conversion.expand(string, variables=variables, encoding=encoding)

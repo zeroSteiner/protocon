@@ -34,6 +34,7 @@ import socket
 import time
 
 import protocon
+import protocon.utilities
 
 _inf = float('inf')
 
@@ -45,6 +46,7 @@ class ConnectionDriver(protocon.ConnectionDriver):
 
 		ConnectionDriverSetting = protocon.ConnectionDriverSetting
 		self.set_settings_from_url((
+			ConnectionDriverSetting(name='ip6-scope-id'),
 			ConnectionDriverSetting(name='type', default_value='client', choices=('client', 'server')),
 		))
 
@@ -71,19 +73,31 @@ class ConnectionDriver(protocon.ConnectionDriver):
 		super(ConnectionDriver, self).close()
 
 	def open(self):
-		if self.url.scheme in ('tcp', 'tcp4'):
-			tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		elif self.url.scheme == 'tcp6':
-			tcp_sock = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+		family = {'tcp': socket.AF_UNSPEC, 'tcp4': socket.AF_INET, 'tcp6': socket.AF_INET6}[self.url.scheme]
+		addrinfo = protocon.utilities.getaddrinfos(
+			self.url.host,
+			self.url.port,
+			family,
+			type=socket.SOCK_STREAM,
+			proto=socket.IPPROTO_TCP
+		)
+		if not addrinfo:
+			raise protocon.ProtoconDriverError('getaddrinfo failed for the specified URL')
+		addrinfo = addrinfo[0]
+		tcp_sock = socket.socket(addrinfo.family, addrinfo.type)
+		if addrinfo.family == socket.AF_INET6 and self.settings['ip6-scope-id'] is not None:
+			scope_id = self.settings['ip6-scope-id']
+			scope_id = int(scope_id) if scope_id.isdigit() else socket.if_nametoindex(scope_id)
+			addrinfo = addrinfo._replace(sockaddr=addrinfo.sockaddr[:3] + (scope_id,))
 
 		if self.settings['type'] == 'client':
-			tcp_sock.connect((self.url.host, self.url.port))
+			tcp_sock.connect(addrinfo.sockaddr)
 			self._connection = tcp_sock
 		elif self.settings['type'] == 'server':
 			tcp_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-			tcp_sock.bind((self.url.host, self.url.port))
+			tcp_sock.bind(addrinfo.sockaddr)
 			tcp_sock.listen(1)
-			self.print_status("Bound to {0}, waiting for a client to connect".format(self.url.get_authority()))
+			self.print_status("Bound to {0}, waiting for a client to connect".format(self.url.authority()))
 			self._connection, peer_address = tcp_sock.accept()
 			self.print_status("Received connection from: {0}:{1}".format(
 				'[' + peer_address[0] + ']' if tcp_sock.family == socket.AF_INET6 else peer_address[0],

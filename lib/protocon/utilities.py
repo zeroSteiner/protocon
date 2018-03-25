@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
-#  protocon
+#  protocon/utilities.py
 #
 #  Redistribution and use in source and binary forms, with or without
 #  modification, are permitted provided that the following conditions are
@@ -30,44 +30,17 @@
 #  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-import argparse
-import functools
-import os
-import sys
+import collections
+import socket
 
-get_path = functools.partial(os.path.join, os.path.abspath(os.path.dirname(__file__)))
-sys.path.append(get_path('lib'))
+AddrInfo = collections.namedtuple('AddrInfo', ('family', 'type', 'proto', 'canonname', 'sockaddr'))
 
-import protocon
+def getaddrinfos(host, port=0, family=0, type=0, proto=0, flags=0):
+	"""
+	Return the results from :py:func:`socket.getaddrinfo` but as a tuple of
+	:py:class:`.AddrInfo` objects for easier readability.
 
-EPILOG = """\
-target_url examples:
-  null:
-  serial:///dev/ttyUSB0?baudrate=9600&bytesize=8&parity=N&stopbits=1
-  tcp://1.2.3.4:123
-  tcp4://0.0.0.0:123/?type=server
-  tcp6://[fe80::800:27ff:fe00:10]:4444/?ip6-scope-id=eth0
-  udp://1.2.3.4:123
-  udp4://1.2.3.4:123/?size=8192
-"""
-
-def main():
-	parser = argparse.ArgumentParser(description='protocon', conflict_handler='resolve', formatter_class=argparse.RawTextHelpFormatter)
-	parser.add_argument('-q', '--quiet', action='store_true', default=False, help='initialize quiet to True')
-	parser.add_argument('-v', '--version', action='version', version='%(prog)s Version: ' + protocon.__version__)
-	parser.add_argument('target_url', help='the connection URL')
-	parser.add_argument('scripts', metavar='script', nargs='*', help='the script to execute')
-	parser.epilog = EPILOG
-	arguments = parser.parse_args()
-
-	try:
-		engine = protocon.Engine.from_url(arguments.target_url)
-	except protocon.ProtoconDriverError as error:
-		protocon.print_error('Driver error: ' + error.message)
-	else:
-		engine.entry(arguments.scripts)
-		engine.connection.close()
-	return 0
-
-if __name__ == '__main__':
-	sys.exit(main())
+	:return: A tuple of :py:class:`.AddrInfo` objects.
+	:rtype: tuple
+	"""
+	return tuple(AddrInfo(*result) for result in socket.getaddrinfo(host, port, family=family, type=type, proto=proto, flags=flags))

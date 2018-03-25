@@ -69,6 +69,7 @@ setup(
 		'boltons>=17.1.0',
 		'cmd2==0.8',
 		'crcelk>=1.2',
+		'hyperlink>=18.0.0',
 		'ipython>=6.2.1',
 		'pluginbase>=0.5',
 		'pyserial>=3.4',
