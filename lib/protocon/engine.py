@@ -51,6 +51,8 @@ from . import conversion
 from . import errors
 from . import plugin_manager
 
+cmd2.set_posix_shlex(True)
+
 # this class includes both cmd2 style p* and generic style print_* methods for
 # compatibility with cmd2.Cmd and the ConnectionDriver interface
 class Engine(cmd2.Cmd):
