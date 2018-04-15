@@ -49,7 +49,7 @@ def getaddrinfos(host, port=0, family=0, type=0, proto=0, flags=0):
 
 def _literal_type(type_, value):
 	try:
-		value = ast.literal_eval(value)
+		value = ast.literal_eval(str(value))
 	except (SyntaxError, ValueError):
 		raise TypeError('value is not a ' + type_.__name__) from None
 	if not isinstance(value, type_):
