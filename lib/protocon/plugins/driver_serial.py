@@ -77,7 +77,7 @@ class ConnectionDriver(protocon.ConnectionDriver):
 		super(ConnectionDriver, self).close()
 
 	def open(self):
-		self._connection = serial.Serial(os.path.sep + os.path.join(*url.path), **self.settings)
+		self._connection = serial.Serial(os.path.sep + os.path.join(*self.url.path), **self.settings)
 		self._connection.setRTS(True)
 		self._connection.setDTR(False)
 		self.connected = True
