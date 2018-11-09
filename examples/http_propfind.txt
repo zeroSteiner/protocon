@@ -1,0 +1,19 @@
+send 'PROPFIND / HTTP/1.1\r\n'
+send 'Host: ${url.host}\r\n'
+send 'Content-Type: application/xml\r\n'
+send 'Content-Length: 298\r\n'
+send '\r\n'
+send '<?xml version="1.0" encoding="utf-8"?>\r\n'
+send '<propfind xmlns="DAV:">\r\n'
+send '<prop>\r\n'
+send '<getcontentlength xmlns="DAV:"/>\r\n'
+send '<getlastmodified xmlns="DAV:"/>\r\n'
+send '<executable xmlns="http://apache.org/dav/props/"/>\r\n'
+send '<resourcetype xmlns="DAV:"/>\r\n'
+send '<checked-in xmlns="DAV:"/>\r\n'
+send '<checked-out xmlns="DAV:"/>\r\n'
+send '</prop>\r\n'
+send '</propfind>\r\n'
+
+recv_time 1
+close
