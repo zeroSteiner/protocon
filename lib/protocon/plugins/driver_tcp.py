@@ -65,6 +65,7 @@ class ConnectionDriver(protocon.ConnectionDriver):
 			data += chunk
 			if terminator is not None and terminator in data:
 				data, terminator, _ = data.partition(terminator)
+				data += terminator
 				break
 			now = time.time()
 		return data

@@ -61,6 +61,7 @@ class ConnectionDriver(protocon.ConnectionDriver):
 			data += self._connection.recvfrom(self.settings['size'] if size == _inf else size)[0]
 			if terminator is not None and terminator in data:
 				data, terminator, _ = data.partition(terminator)
+				data += terminator
 				break
 			now = time.time()
 		return data
