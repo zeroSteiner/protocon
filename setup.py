@@ -68,7 +68,7 @@ setup(
 	# these are duplicated in requirements.txt
 	install_requires=[
 		'boltons>=17.1.0',
-		'cmd2==0.8',
+		'cmd2==0.9.6',
 		'crcelk>=1.2',
 		'hyperlink>=18.0.0',
 		'ipython>=6.2.1',
