@@ -52,7 +52,7 @@ through simple send and receive transcripts.\
 
 setup(
 	name='protocon',
-	version='1.2.5',
+	version='1.2.6',
 	author='Spencer McIntyre',
 	author_email='zeroSteiner@gmail.com',
 	maintainer='Spencer McIntyre',
