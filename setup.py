@@ -42,12 +42,8 @@ except ImportError:
 	print('manager (usually python-setuptools) or via pip (pip install setuptools).')
 	sys.exit(1)
 
-try:
-	import pypandoc
-	long_description = pypandoc.convert(os.path.join(base_directory, 'README.md'), 'rst')
-except (ImportError, OSError):
-	print('The pypandoc module is unavailable, can not generate the long description', file=sys.stderr)
-	long_description = None
+with open(os.path.join(base_directory, 'README.rst'), 'r') as file_h:
+	long_description = file_h.read()
 
 DESCRIPTION = """\
 Protocon is a socket-centric framework for rapidly prototyping connections \
