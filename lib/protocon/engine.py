@@ -78,6 +78,9 @@ class Engine(cmd2.Cmd):
 			'print_tx': 'Print sent data'
 		})
 
+		self.locals_in_py = True
+		del self.settable['locals_in_py']
+
 		self.io_history = self.IOHistory(rx=collections.deque(), tx=collections.deque())
 		self.quiet = quiet
 
