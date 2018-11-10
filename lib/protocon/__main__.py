@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
-#  protocon
+#  protocon/__main__.py
 #
 #  Redistribution and use in source and binary forms, with or without
 #  modification, are permitted provided that the following conditions are
@@ -30,14 +30,42 @@
 #  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-import functools
-import os
+import argparse
 import sys
 
-get_path = functools.partial(os.path.join, os.path.abspath(os.path.dirname(__file__)))
-sys.path.append(get_path('lib'))
+from . import __version__
+from . import color
+from . import engine
+from . import errors
 
-from protocon.__main__ import main
+EPILOG = """\
+target_url examples:
+  null:
+  serial:///dev/ttyUSB0?baudrate=9600&bytesize=8&parity=N&stopbits=1
+  tcp://1.2.3.4:123
+  tcp4://0.0.0.0:123/?type=server
+  tcp6://[fe80::800:27ff:fe00:10]:4444/?ip6-scope-id=eth0
+  udp://1.2.3.4:123
+  udp4://1.2.3.4:123/?size=8192
+"""
+
+def main():
+	parser = argparse.ArgumentParser(prog='protocon', description='protocon', conflict_handler='resolve', formatter_class=argparse.RawTextHelpFormatter)
+	parser.add_argument('-q', '--quiet', action='store_true', default=False, help='initialize quiet to True')
+	parser.add_argument('-v', '--version', action='version', version='protocon Version: ' + __version__)
+	parser.add_argument('target_url', help='the connection URL')
+	parser.add_argument('scripts', metavar='script', nargs='*', help='the script to execute')
+	parser.epilog = EPILOG
+	arguments = parser.parse_args()
+
+	try:
+		protocon = engine.Engine.from_url(arguments.target_url)
+	except errors.ProtoconDriverError as error:
+		color.print_error('Driver error: ' + error.message)
+	else:
+		protocon.entry(arguments.scripts)
+		protocon.connection.close()
+	return 0
 
 if __name__ == '__main__':
 	sys.exit(main())
