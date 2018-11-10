@@ -67,7 +67,7 @@ class Engine(cmd2.Cmd):
 		self.plugins = plugins
 		# variables
 		self.feedback_to_output = True
-		self.crc_algorithm = 'CRC16'
+		self.crc_algorithm = 'crc-16'
 		self.encoding = 'utf-8'
 		self.print_rx = True
 		self.print_tx = True
@@ -84,7 +84,7 @@ class Engine(cmd2.Cmd):
 		self._onchange_crc_algorithm = functools.partial(
 			self._set_enumeration,
 			'crc_algorithm',
-			('CRC15', 'CRC16', 'CRC16_USB', 'CRC24', 'CRC32', 'CRC_CCITT', 'CRC_HDLC', 'CRC_XMODEM')
+			tuple(name.lower() for name in crcelk.algorithms.keys())
 		)
 		self._onchange_encoding = functools.partial(self._set_enumeration, 'encoding', conversion.ENCODINGS)
 
@@ -104,11 +104,11 @@ class Engine(cmd2.Cmd):
 		setattr(self, name, old)
 		self.perror("Invalid value: {0!r} for option: {1}, choose one of:".format(new, name), traceback_war=False)
 		prefix = (color.PREFIX_ERROR if self.colors else color.PREFIX_ERROR_RAW) + '       '
-		for choice_line in textwrap.wrap(', '.join(choices), 69):
+		for choice_line in textwrap.wrap(', '.join(choices), 69, break_long_words=False, break_on_hyphens=False):
 			sys.stderr.write(prefix + choice_line + '\n')
 
 	def _crc_string(self, data):
-		algo = getattr(crcelk, self.crc_algorithm)
+		algo = crcelk.algorithms[self.crc_algorithm.upper()]
 		return "0x{value:0{width:}x}".format(value=algo.calc_bytes(data), width=algo.width // 4)
 
 	def _post_recv(self, data, opts=None):

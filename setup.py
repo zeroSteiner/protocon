@@ -65,7 +65,7 @@ setup(
 	install_requires=[
 		'boltons>=17.1.0',
 		'cmd2==0.9.6',
-		'crcelk>=1.2',
+		'crcelk>=1.3',
 		'hyperlink>=18.0.0',
 		'ipython>=6.2.1',
 		'pluginbase>=0.5',
