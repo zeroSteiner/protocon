@@ -1,0 +1,7 @@
+# Example that sends a GTP-U echo request
+set encoding hex
+
+# The Tunnel Endpoint Identifier (TEID) must be all zeros per the specification
+send 32010006000000000000414243444546
+recv_time 2
+exit
