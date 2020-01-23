@@ -32,6 +32,7 @@
 
 import socket
 import time
+import ssl
 
 import protocon
 import protocon.utilities
@@ -39,7 +40,7 @@ import protocon.utilities
 _inf = float('inf')
 
 class ConnectionDriver(protocon.ConnectionDriver):
-	schemes = ('tcp', 'tcp4', 'tcp6')
+	schemes = ('tcp', 'tcp4', 'tcp6', 'ssl', 'ssl4', 'ssl6')
 	url_attributes = ('host', 'port',)
 	def __init__(self, *args, **kwargs):
 		super(ConnectionDriver, self).__init__(*args, **kwargs)
@@ -75,7 +76,10 @@ class ConnectionDriver(protocon.ConnectionDriver):
 		super(ConnectionDriver, self).close()
 
 	def open(self):
-		family = {'tcp': socket.AF_UNSPEC, 'tcp4': socket.AF_INET, 'tcp6': socket.AF_INET6}[self.url.scheme]
+		family = {
+			'tcp': socket.AF_UNSPEC, 'tcp4': socket.AF_INET, 'tcp6': socket.AF_INET6,
+			'ssl': socket.AF_UNSPEC, 'ssl4': socket.AF_INET, 'ssl6': socket.AF_INET6
+		}[self.url.scheme]
 		addrinfo = protocon.utilities.getaddrinfos(
 			self.url.host,
 			self.url.port,
@@ -92,10 +96,16 @@ class ConnectionDriver(protocon.ConnectionDriver):
 			self._addrinfo = self._addrinfo._replace(sockaddr=self._addrinfo.sockaddr[:3] + (scope_id,))
 
 		tcp_sock = socket.socket(self._addrinfo.family, self._addrinfo.type)
+		context = ssl.create_default_context()
+		context.check_hostname = False
+		context.verify_mode = ssl.CERT_NONE
 		if self.settings['type'] == 'client':
-			tcp_sock.connect(self._addrinfo.sockaddr)
-			self._connection = tcp_sock
+			ssl_sock = context.wrap_socket(tcp_sock)
+			ssl_sock.connect(self._addrinfo.sockaddr)
+			self._connection = ssl_sock
 		elif self.settings['type'] == 'server':
+			if 'ssl' in self.url.scheme:
+				raise protocon.ProtoconDriverError("{0} does not support server".format(self.url.scheme))
 			tcp_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 			tcp_sock.bind(self._addrinfo.sockaddr)
 			tcp_sock.listen(1)
