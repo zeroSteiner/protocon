@@ -36,10 +36,16 @@ import time
 import protocon
 import protocon.utilities
 
+from OpenSSL import SSL
+from OpenSSL._util import (lib as _lib)
+
+DTLSv1_METHOD = 7
+SSL.Context._methods[DTLSv1_METHOD] = getattr(_lib, "DTLSv1_client_method")
+
 _inf = float('inf')
 
 class ConnectionDriver(protocon.ConnectionDriver):
-	schemes = ('udp', 'udp4', 'udp6')
+	schemes = ('dtls', 'dtls4', 'dtls6', 'udp', 'udp4', 'udp6')
 	url_attributes = ('host', 'port',)
 	def __init__(self, *args, **kwargs):
 		super(ConnectionDriver, self).__init__(*args, **kwargs)
@@ -67,7 +73,10 @@ class ConnectionDriver(protocon.ConnectionDriver):
 		return data
 
 	def open(self):
-		family = {'udp': socket.AF_UNSPEC, 'udp4': socket.AF_INET, 'udp6': socket.AF_INET6}[self.url.scheme]
+		family = {
+			'dtls': socket.AF_UNSPEC, 'dtls4': socket.AF_INET, 'dtls6': socket.AF_INET6,
+			'udp': socket.AF_UNSPEC, 'udp4': socket.AF_INET, 'udp6': socket.AF_INET6
+		}[self.url.scheme]
 		addrinfo = protocon.utilities.getaddrinfos(
 			self.url.host,
 			self.url.port,
@@ -84,6 +93,9 @@ class ConnectionDriver(protocon.ConnectionDriver):
 			self._addrinfo = self._addrinfo._replace(sockaddr=self._addrinfo.sockaddr[:3] + (scope_id,))
 
 		self._connection = socket.socket(self._addrinfo.family, self._addrinfo.type)
+		if self.url.scheme.startswith('dtls'):
+			ctx = SSL.Context(DTLSv1_METHOD)
+			self._connection = SSL.Connection(ctx, socket.socket(socket.AF_INET, socket.SOCK_DGRAM))
 		self.connected = True
 
 	def recv_size(self, size, timeout=None):
