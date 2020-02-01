@@ -41,16 +41,14 @@ _inf = float('inf')
 
 class ConnectionDriver(protocon.ConnectionDriver):
 	schemes = ('tcp', 'tcp4', 'tcp6', 'ssl', 'ssl4', 'ssl6')
+	setting_definitions = (
+		protocon.ConnectionDriverSetting(name='ip6-scope-id'),
+		protocon.ConnectionDriverSetting(name='type', default_value='client', choices=('client', 'server')),
+	)
 	url_attributes = ('host', 'port',)
 	def __init__(self, *args, **kwargs):
 		super(ConnectionDriver, self).__init__(*args, **kwargs)
 		self._addrinfo = None
-
-		ConnectionDriverSetting = protocon.ConnectionDriverSetting
-		self.set_settings_from_url((
-			ConnectionDriverSetting(name='ip6-scope-id'),
-			ConnectionDriverSetting(name='type', default_value='client', choices=('client', 'server')),
-		))
 
 	def _recv(self, size, timeout, terminator=None):
 		now = time.time()

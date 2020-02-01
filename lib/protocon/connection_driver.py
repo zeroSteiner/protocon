@@ -66,6 +66,7 @@ def get_settings_from_url(url, setting_defs):
 
 class ConnectionDriver(object):
 	schemes = ()
+	setting_definitions = ()
 	url_attributes = ()
 	def __init__(self, url):
 		for attribute in self.url_attributes:
@@ -76,6 +77,8 @@ class ConnectionDriver(object):
 		self.connected = False
 		self.print_driver = None
 		self.settings = {}
+		if self.setting_definitions:
+			self.set_settings_from_url(self.setting_definitions)
 
 	def _select(self, timeout):
 		if self._connection is None:

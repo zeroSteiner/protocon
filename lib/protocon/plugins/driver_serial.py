@@ -46,18 +46,13 @@ BAUDRATES = (
 
 class ConnectionDriver(protocon.ConnectionDriver):
 	schemes = ('serial',)
+	setting_definitions = (
+		protocon.ConnectionDriverSetting(name='baudrate', default_value=9600, type=int, choices=BAUDRATES),
+		protocon.ConnectionDriverSetting(name='bytesize', default_value=8, type=int, choices=(5, 6, 7, 8)),
+		protocon.ConnectionDriverSetting(name='parity', default_value='N', choices=serial.PARITY_NAMES.keys()),
+		protocon.ConnectionDriverSetting(name='stopbits', default_value=1, type=float, choices=(1, 1.5, 2))
+	)
 	url_attributes = ('path',)
-	def __init__(self, *args, **kwargs):
-		super(ConnectionDriver, self).__init__(*args, **kwargs)
-
-		ConnectionDriverSetting = protocon.ConnectionDriverSetting
-		self.set_settings_from_url((
-			ConnectionDriverSetting(name='baudrate', default_value=9600, type=int, choices=BAUDRATES),
-			ConnectionDriverSetting(name='bytesize', default_value=8, type=int, choices=(5, 6, 7, 8)),
-			ConnectionDriverSetting(name='parity', default_value='N', choices=serial.PARITY_NAMES.keys()),
-			ConnectionDriverSetting(name='stopbits', default_value=1, type=float, choices=(1, 1.5, 2))
-		))
-
 	def _recv(self, size, timeout, terminator=None):
 		now = time.time()
 		expiration = _inf if timeout is None else time.time() + timeout

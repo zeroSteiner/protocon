@@ -34,6 +34,7 @@ import argparse
 import functools
 import os
 import sys
+import textwrap
 
 get_path = functools.partial(os.path.join, os.path.abspath(os.path.dirname(__file__)))
 sys.path.append(get_path('lib'))
@@ -54,17 +55,51 @@ target_url examples:
   udp4://1.2.3.4:123/?size=8192
 """
 
+def print_driver_descriptions(plugins):
+	drivers = sorted(plugins.connection_drivers.items(), key=lambda kv: kv[0])
+	print("Loaded {:,} drivers".format(len(drivers)))
+	for name, driver in drivers:
+		print("  {}:".format(name))
+		print("    url schemes:  {}".format(', '.join(sorted(driver.schemes))))
+		if driver.setting_definitions:
+			print('    settings:')
+			for setting in driver.setting_definitions:
+				desc = setting.name
+				if setting.default_value is not None:
+					desc += " (default: {})".format(setting.default_value)
+				print('      ' + desc)
+				if setting.choices:
+					choices_desc = ', '.join(map(str, setting.choices))
+					if len(choices_desc) <= 63:
+						print('        choices: ' + choices_desc)
+					else:
+						print('        choices:')
+						for line in textwrap.wrap(choices_desc, width=72):
+							print('          ' + line)
+		print('')
+
 def main():
 	parser = argparse.ArgumentParser(description='protocon', conflict_handler='resolve', formatter_class=argparse.RawTextHelpFormatter)
 	parser.add_argument('-q', '--quiet', action='store_true', default=False, help='initialize quiet to True')
 	parser.add_argument('-v', '--version', action='version', version='%(prog)s Version: ' + protocon.__version__)
-	parser.add_argument('target_url', help='the connection URL')
+	parser.add_argument('--help-drivers', action='store_true', help='list the loaded drivers and their details')
+	parser.add_argument('target_url', nargs='?', help='the connection url')
 	parser.add_argument('scripts', metavar='script', nargs='*', help='the script to execute')
 	parser.epilog = EPILOG
 	arguments = parser.parse_args()
 
+	if not any([arguments.help_drivers, arguments.target_url]):
+		parser.error('the following arguments are required: target_url')
+		return 0
+
+	plugins = protocon.PluginManager()
+
+	if arguments.help_drivers:
+		print_driver_descriptions(plugins)
+		return 0
+
 	try:
-		engine = protocon.Engine.from_url(arguments.target_url)
+		engine = protocon.Engine.from_url(arguments.target_url, plugins=plugins)
 	except protocon.ProtoconDriverError as error:
 		protocon.print_error('Driver error: ' + error.message)
 	else:

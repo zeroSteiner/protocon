@@ -40,16 +40,14 @@ _inf = float('inf')
 
 class ConnectionDriver(protocon.ConnectionDriver):
 	schemes = ('udp', 'udp4', 'udp6')
+	setting_definitions = (
+		protocon.ConnectionDriverSetting(name='ip6-scope-id'),
+		protocon.ConnectionDriverSetting(name='size', default_value=0xffff, type=protocon.utilities.literal_type(int)),
+	)
 	url_attributes = ('host', 'port',)
 	def __init__(self, *args, **kwargs):
 		super(ConnectionDriver, self).__init__(*args, **kwargs)
 		self._addrinfo = None
-
-		ConnectionDriverSetting = protocon.ConnectionDriverSetting
-		self.set_settings_from_url((
-			ConnectionDriverSetting(name='ip6-scope-id'),
-			ConnectionDriverSetting(name='size', default_value=0xffff, type=protocon.utilities.literal_type(int)),
-		))
 
 	def _recv(self, size, timeout, terminator=None):
 		now = time.time()
