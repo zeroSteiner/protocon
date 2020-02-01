@@ -67,6 +67,22 @@ can be specified and will be executed in sequence.
 For more examples of resource files, see the `examples
 directory <https://github.com/zeroSteiner/protocon/tree/master/examples>`__.
 
+``target_url`` Examples
+~~~~~~~~~~~~~~~~~~~~~~~
+
+::
+
+    null:
+    serial:///dev/ttyUSB0?baudrate=9600&bytesize=8&parity=N&stopbits=1
+    tcp://1.2.3.4:123
+    tcp4://0.0.0.0:123/?type=server
+    tcp6://[fe80::800:27ff:fe00:10]:4444/?ip6-scope-id=eth0
+    ssl://1.2.3.4:123
+    ssl4://5.6.7.8:567
+    ssl6://[fe80::800:27ff:fe00:10]:4444/?ip6-scope-id=eth0
+    udp://1.2.3.4:123
+    udp4://1.2.3.4:123/?size=8192
+
 Data Expansion
 --------------
 
