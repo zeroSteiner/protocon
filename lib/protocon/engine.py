@@ -142,7 +142,8 @@ class Engine(cmd2.Cmd):
 
 		if isinstance(url, str):
 			url = hyperlink.URL.from_text(url)
-		color.print_status("Loaded {0:,} connection drivers".format(len(plugins.connection_drivers)))
+		scheme_count = sum([len(driver.schemes) for driver in plugins.connection_drivers.values()])
+		color.print_status("Loaded {:,} connection drivers, providing {:,} URL schemes".format(len(plugins.connection_drivers), scheme_count))
 		if plugins.transcoders:
 			color.print_status("Loaded {0:,} transcode drivers".format(len(plugins.transcoders)))
 		driver = next((driver for driver in plugins.connection_drivers.values() if url.scheme in driver.schemes), None)
