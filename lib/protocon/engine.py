@@ -249,6 +249,7 @@ class Engine(cmd2.Cmd):
 		return conversion.decode(string, encoding=encoding)
 
 	def perror(self, errmsg, exception_type=None, traceback_war=True):
+		errmsg = str(errmsg)
 		if self.debug:
 			traceback.print_exc()
 
