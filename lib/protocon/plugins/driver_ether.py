@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
-#  protocon/plugins/driver_l2.py
+#  protocon/plugins/driver_ether.py
 #
 #  Redistribution and use in source and binary forms, with or without
 #  modification, are permitted provided that the following conditions are
@@ -30,8 +30,12 @@
 #  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
+import binascii
+import fcntl
 import os
+import re
 import socket
+import struct
 import time
 
 import protocon.errors
@@ -39,12 +43,28 @@ import protocon.utilities
 
 _inf = float('inf')
 
-# see: <linux/if_ether.h>
-ETH_P_ALL = 0x0003
+_BROADCAST = b'\xff\xff\xff\xff\xff\xff'
+_HEADER_SIZE = 14
 
+def _assert_is_mac(mac):
+	if re.match('^([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2}$', mac) is None:
+		raise protocon.errors.ProtoconDriverError('bad mac address: ' + mac)
+	return True
+
+def _get_iface_mac(ifname):
+	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+	info = fcntl.ioctl(s.fileno(), 0x8927,  struct.pack('256s', ifname[:15].encode('ascii')))
+	return ':'.join(['%02x' % char for char in info[18:24]])
+
+# This driver is a software wrapper on top of L2 sockets to handle ethernet
+# headers. Frames sent will have an ethernet header created and added to them
+# and frames received will be filtered based on their ethernet header.
 class ConnectionDriver(protocon.ConnectionDriver):
-	schemes = ('l2',)
+	schemes = ('ether',)
 	setting_definitions = (
+		protocon.ConnectionDriverSetting(name='src'),
+		protocon.ConnectionDriverSetting(name='dst', default_value='ff:ff:ff:ff:ff:ff'),
+		protocon.ConnectionDriverSetting(name='type', default_value=0x0800, type=protocon.utilities.literal_type(int)),
 		protocon.ConnectionDriverSetting(name='size', default_value=0xffff, type=protocon.utilities.literal_type(int)),
 	)
 	url_attributes = ('host',)
@@ -52,6 +72,15 @@ class ConnectionDriver(protocon.ConnectionDriver):
 		if os.getuid():
 			raise protocon.errors.ProtoconDriverError('this driver requires root privileges')
 		super(ConnectionDriver, self).__init__(*args, **kwargs)
+		_assert_is_mac(self.settings['dst'])
+		if self.settings['src'] is None:
+			self.settings['src'] = _get_iface_mac(self.url.host)
+		_assert_is_mac(self.settings['src'])
+
+	def _mac(self, which):
+		mac = self.settings[which]
+		_assert_is_mac(mac)
+		return binascii.a2b_hex(mac.replace(':', ''))
 
 	def _recv(self, size, timeout, terminator=None):
 		now = time.time()
@@ -60,7 +89,15 @@ class ConnectionDriver(protocon.ConnectionDriver):
 		while len(data) < size and (self._select(0) or expiration >= now):
 			if not self._select(max(expiration - now, 0)):
 				break
-			data += self._connection.recv(self.settings['size'] if size == _inf else size)
+			packet = self._connection.recv(_HEADER_SIZE + (self.settings['size'] if size == _inf else size))
+			if len(packet) < _HEADER_SIZE:
+				continue
+			dst, src = packet[:6], packet[6:12]
+			if dst != self._mac('src') and dst != _BROADCAST:
+				continue
+			if src != self._mac('dst') and self._mac('dst') != _BROADCAST:
+				continue
+			data += packet[_HEADER_SIZE:]
 			if terminator is not None and terminator in data:
 				data, terminator, _ = data.partition(terminator)
 				data += terminator
@@ -73,7 +110,7 @@ class ConnectionDriver(protocon.ConnectionDriver):
 		super(ConnectionDriver, self).close()
 
 	def open(self):
-		self._connection = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(ETH_P_ALL))
+		self._connection = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(self.settings['type']))
 		self._connection.bind((self.url.host, 0))
 		self.connected = True
 
@@ -87,4 +124,5 @@ class ConnectionDriver(protocon.ConnectionDriver):
 		return self._recv(_inf, timeout, terminator=terminator)
 
 	def send(self, data):
-		self._connection.send(data)
+		ether = self._mac('dst') + self._mac('src') + struct.pack('>H', self.settings['type'])
+		self._connection.send(ether + data)
