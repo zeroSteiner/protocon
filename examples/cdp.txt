@@ -1,0 +1,6 @@
+# Example to send a forged Cisco Discovery Protocol (CDP) frame.
+# This includes the ethernet header, so use the l2 driver.
+set debug true
+set encoding hex
+
+send 01000ccccccca2c12d1c43210052aaaa0300000c200001ff67d70001000b424f4b3358423700020011000000010101cc000408ed0b6a0003000d45746865726e657430000400080000006400050009302e372e310006000c70726f746f636f6e
