@@ -71,7 +71,7 @@ class ConnectionDriver(protocon.ConnectionDriver):
 		super(ConnectionDriver, self).close()
 
 	def open(self):
-		sock = socket.socket(socket.AF_BLUETOOTH, socket.BTPROTO_RFCOMM)
+		sock = socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOMM)
 		sock.connect((self.settings['dst'], self.settings['channel']))
 		self._connection = sock
 		self.connected = True
