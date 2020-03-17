@@ -33,6 +33,8 @@
 import ast
 import collections
 import functools
+import ipaddress
+import re
 import socket
 
 AddrInfo = collections.namedtuple('AddrInfo', ('family', 'type', 'proto', 'canonname', 'sockaddr'))
@@ -58,3 +60,36 @@ def _literal_type(type_, value):
 
 def literal_type(type_):
 	return functools.partial(_literal_type, type_)
+
+class NetworkLocation(object):
+	__slots__ = ('address', 'port')
+	def __init__(self, address, port):
+		self.address = ipaddress.ip_address(address)
+		self.port = port
+
+	def __repr__(self):
+		return "{}({!r}, {!r})".format(self.__class__.__name__, self.address, self.port)
+
+	def __str__(self):
+		address = self.address
+		if self.port:
+			if isinstance(address, ipaddress.IPv6Address):
+				address = '[' + str(address) + ']'
+			address = str(address) + ':' + str(self.port)
+		return str(address)
+
+	@classmethod
+	def from_string(cls, string, default_port=0):
+		ipv4_regex = '(25[0-5]|2[0-4]\d|1\d\d|\d{1,2})(\.(25[0-5]|2[0-4]\d|1\d\d|\d{1,2})){3}'
+		ipv6_regex = '[0-9a-f]{0,4}(:[0-9a-f]{0,4}){2,7}'
+		regex = r'^(?P<bracket>\[)?'
+		regex += '(?P<location>' + '|'.join([ipv4_regex, ipv6_regex]) + ')'
+		regex += '(?(bracket)\]:(?=\d)|(:(?=\d)|$))(?P<port>(?<=:)\d+)?$'
+		match = re.match(regex, string, flags=re.IGNORECASE)
+		if match is None:
+			raise ValueError('invalid network location specified')
+		port = int(match.group('port')) if match.group('port') else default_port
+		return cls(match.group('location'), port)
+
+	def to_address(self):
+		return (str(self.address), self.port)

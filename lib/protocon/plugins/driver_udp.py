@@ -42,6 +42,7 @@ class ConnectionDriver(protocon.ConnectionDriver):
 	schemes = ('udp', 'udp4', 'udp6')
 	setting_definitions = (
 		protocon.ConnectionDriverSetting(name='ip6-scope-id'),
+		protocon.ConnectionDriverSetting(name='src'),
 		protocon.ConnectionDriverSetting(name='size', default_value=0xffff, type=protocon.utilities.literal_type(int)),
 	)
 	url_attributes = ('host', 'port',)
@@ -82,6 +83,10 @@ class ConnectionDriver(protocon.ConnectionDriver):
 			self._addrinfo = self._addrinfo._replace(sockaddr=self._addrinfo.sockaddr[:3] + (scope_id,))
 
 		self._connection = socket.socket(self._addrinfo.family, self._addrinfo.type)
+		source = self.settings['src']
+		if source:
+			source = protocon.utilities.NetworkLocation.from_string(source)
+			self._connection.bind(source.to_address())
 		self.connected = True
 
 	def recv_size(self, size, timeout=None):
