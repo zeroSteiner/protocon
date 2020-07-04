@@ -83,6 +83,8 @@ class ConnectionDriver(protocon.ConnectionDriver):
 			self._addrinfo = self._addrinfo._replace(sockaddr=self._addrinfo.sockaddr[:3] + (scope_id,))
 
 		self._connection = socket.socket(self._addrinfo.family, self._addrinfo.type)
+		if self._addrinfo.family == socket.AF_INET and self._addrinfo.sockaddr.address == '255.255.255.255':
+			self._connection.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 		source = self.settings['src']
 		if source:
 			source = protocon.utilities.NetworkLocation.from_string(source)

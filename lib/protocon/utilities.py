@@ -38,6 +38,8 @@ import re
 import socket
 
 AddrInfo = collections.namedtuple('AddrInfo', ('family', 'type', 'proto', 'canonname', 'sockaddr'))
+_SockAddr4 = collections.namedtuple('_SockAddr4', ('address', 'port'))
+_SockAddr6 = collections.namedtuple('_SockAddr6', ('address', 'port', 'flow_info', 'socpe_id'))
 
 def getaddrinfos(host, port=0, family=0, type=0, proto=0, flags=0):
 	"""
@@ -47,7 +49,15 @@ def getaddrinfos(host, port=0, family=0, type=0, proto=0, flags=0):
 	:return: A tuple of :py:class:`.AddrInfo` objects.
 	:rtype: tuple
 	"""
-	return tuple(AddrInfo(*result) for result in socket.getaddrinfo(host, port, family=family, type=type, proto=proto, flags=flags))
+	infos = []
+	for result in socket.getaddrinfo(host, port, family=family, type=type, proto=proto, flags=flags):
+		family, type, proto, canonname, sockaddr = result
+		if family == socket.AF_INET:
+			sockaddr = _SockAddr4(*sockaddr)
+		elif family == socket.AF_INET6:
+			sockaddr = _SockAddr6(*sockaddr)
+		infos.append(AddrInfo(family, type, proto, canonname, sockaddr))
+	return tuple(infos)
 
 def _literal_type(type_, value):
 	try:
