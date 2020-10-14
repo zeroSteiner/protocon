@@ -99,6 +99,7 @@ def decode(string, encoding='utf-8'):
 	elif encoding == 'base64':
 		data = binascii.a2b_base64(string)
 	elif encoding in ('base16', 'hex'):
+		string = re.sub(r'[_:\-\.\|!\^ ]', '', string)
 		if len(string) > 2 and re.match(r'^[0-9a-f]{2}([^0-9a-f])(([0-9a-f]{2}(\1)))*[0-9a-f]{2}$', string, re.IGNORECASE):
 			string = string.replace(string[2], '')
 		if len(string) % 2:
