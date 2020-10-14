@@ -45,6 +45,7 @@ _inf = float('inf')
 
 _BROADCAST = b'\xff\xff\xff\xff\xff\xff'
 _HEADER_SIZE = 14
+DEFAULT_SRC = '$iface.addr'
 
 def _assert_is_mac(mac):
 	if re.match('^([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2}$', mac) is None:
@@ -62,7 +63,7 @@ def _get_iface_mac(ifname):
 class ConnectionDriver(protocon.ConnectionDriver):
 	schemes = ('ether',)
 	setting_definitions = (
-		protocon.ConnectionDriverSetting(name='src'),
+		protocon.ConnectionDriverSetting(name='src', default_value=DEFAULT_SRC),
 		protocon.ConnectionDriverSetting(name='dst', default_value='ff:ff:ff:ff:ff:ff'),
 		protocon.ConnectionDriverSetting(name='type', default_value=0x0800, type=protocon.utilities.literal_type(int)),
 		protocon.ConnectionDriverSetting(name='size', default_value=0xffff, type=protocon.utilities.literal_type(int)),
@@ -73,7 +74,7 @@ class ConnectionDriver(protocon.ConnectionDriver):
 			raise protocon.errors.ProtoconDriverError('this driver requires root privileges')
 		super(ConnectionDriver, self).__init__(*args, **kwargs)
 		_assert_is_mac(self.settings['dst'])
-		if self.settings['src'] is None:
+		if self.settings['src'] is None or self.settings['src'] == DEFAULT_SRC:
 			self.settings['src'] = _get_iface_mac(self.url.host)
 		_assert_is_mac(self.settings['src'])
 
