@@ -1,5 +1,6 @@
 *.py[cod]
 __*.txt
+.idea/*
 build/*
 dist/*
 lib/protocon/__pycache__/*
