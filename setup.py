@@ -31,6 +31,7 @@
 #
 
 import os
+import re
 import sys
 
 base_directory = os.path.dirname(__file__)
@@ -42,8 +43,18 @@ except ImportError:
 	print('manager (usually python-setuptools) or via pip (pip install setuptools).')
 	sys.exit(1)
 
-with open(os.path.join(base_directory, 'README.rst'), 'r') as file_h:
-	long_description = file_h.read()
+try:
+	with open(os.path.join(base_directory, 'README.rst')) as file_h:
+		long_description = file_h.read()
+except OSError:
+	sys.stderr.write('README.rst is unavailable, can not generate the long description\n')
+	long_description = None
+
+with open(os.path.join(base_directory, 'lib', 'protocon', '__init__.py')) as file_h:
+	match = re.search(r'^__version__\s*=\s*([\'"])(?P<version>\d+(\.\d)*)\1$', file_h.read(), flags=re.MULTILINE)
+if match is None:
+	raise RuntimeError('Unable to find the version information')
+version = match.group('version')
 
 DESCRIPTION = """\
 Protocon is a socket-centric framework for rapidly prototyping connections \
@@ -52,7 +63,7 @@ through simple send and receive transcripts.\
 
 setup(
 	name='protocon',
-	version='1.3.1',
+	version=version,
 	author='Spencer McIntyre',
 	author_email='zeroSteiner@gmail.com',
 	maintainer='Spencer McIntyre',
