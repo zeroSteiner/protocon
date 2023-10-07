@@ -65,33 +65,35 @@ class Engine(cmd2.Cmd):
 		elif not isinstance(plugins, plugin_manager.PluginManager):
 			raise TypeError('plugins must be an instance of PluginManager')
 		self.plugins = plugins
+		super(Engine, self).__init__(include_ipy=True, allow_cli_args=False, **kwargs)
+		self.colors = True
 		# variables
 		self.feedback_to_output = True
-		self.crc_algorithm = 'crc-16'
-		self.encoding = 'utf-8'
-		self.print_rx = True
-		self.print_tx = True
-		self.settable.update({
-			'crc_algorithm': 'The CRC algorithm to use',
-			'encoding': 'The data encoding to use',
-			'print_rx': 'Print received data',
-			'print_tx': 'Print sent data'
-		})
 
-		self.locals_in_py = True
-		del self.settable['locals_in_py']
+		self.crc_algorithm = 'crc-16'
+		self.add_settable(
+			cmd2.Settable('crc_algorithm', str, 'The CRC algorithm to use', self, onchange_cb=functools.partial(
+				self._set_enumeration,
+				choices=tuple(name.lower() for name in crcelk.algorithms.keys())
+			))
+		)
+		self.encoding = 'utf-8'
+		self.add_settable(
+			cmd2.Settable('encoding', str, 'The data encoding to use', self, onchange_cb=functools.partial(
+				self._set_enumeration,
+				choices=conversion.ENCODINGS
+			))
+		)
+
+		self.print_rx = True
+		self.add_settable(cmd2.Settable('print_rx', bool, 'Print received data', self))
+
+		self.print_tx = True
+		self.add_settable(cmd2.Settable('print_tx', bool, 'Print sent data', self))
 
 		self.io_history = self.IOHistory(rx=collections.deque(), tx=collections.deque())
-		self.quiet = quiet
+		self.settables['quiet'].set_value(quiet)
 
-		self._onchange_crc_algorithm = functools.partial(
-			self._set_enumeration,
-			'crc_algorithm',
-			tuple(name.lower() for name in crcelk.algorithms.keys())
-		)
-		self._onchange_encoding = functools.partial(self._set_enumeration, 'encoding', conversion.ENCODINGS)
-
-		super(Engine, self).__init__(use_ipython=True, **kwargs)
 		self.exclude_from_help.append('do__relative_load')
 		self.pgood("Initialized protocon engine v{0} at {1:%Y-%m-%d %H:%M:%S}".format(__version__, datetime.datetime.now()))
 
@@ -100,7 +102,7 @@ class Engine(cmd2.Cmd):
 			self.connection.open()
 		self.pgood('Successfully opened connection URL: ' + self.connection.url.to_text())
 
-	def _set_enumeration(self, name, choices, old=None, new=None):
+	def _set_enumeration(self, name, old, new, choices):
 		if new in choices:
 			setattr(self, name, new)
 			return
@@ -159,7 +161,7 @@ class Engine(cmd2.Cmd):
 		:py:meth:`.cmdloop` unless the engine is set to exit.
 		"""
 		for script in scripts:
-			if self.do_load(script):
+			if self.do_run_script(script):
 				break
 		else:
 			self.cmdloop()
@@ -248,13 +250,13 @@ class Engine(cmd2.Cmd):
 		string = conversion.expand(string, variables=variables, encoding=encoding)
 		return conversion.decode(string, encoding=encoding)
 
-	def perror(self, errmsg, exception_type=None, traceback_war=True):
+	def perror(self, errmsg, end='\n', exception_type=None, traceback_war=True, **kwargs):
 		errmsg = str(errmsg)
 		if self.debug:
 			traceback.print_exc()
 
 		if exception_type is None:
-			errmsg = 'ERROR: ' + errmsg + '\n'
+			errmsg = 'ERROR: ' + errmsg
 			if self.colors:
 				errmsg = color.PREFIX_ERROR + errmsg
 			else:
@@ -263,10 +265,10 @@ class Engine(cmd2.Cmd):
 		else:
 			errmsg = ["EXCEPTION of type '{}' occurred with message:".format(exception_type), getattr(errmsg, 'message', repr(errmsg))]
 			if self.colors:
-				errmsg = ''.join((color.PREFIX_ERROR + line + '\n' for line in errmsg))
+				errmsg = '\n'.join((color.PREFIX_ERROR + line for line in errmsg))
 			else:
-				errmsg = ''.join((color.PREFIX_ERROR_RAW + line + '\n' for line in errmsg))
-			sys.stderr.write(errmsg)
+				errmsg = '\n'.join((color.PREFIX_ERROR_RAW + line for line in errmsg))
+			sys.stderr.write(errmsg + end)
 
 		if traceback_war:
 			warning = 'To enable full traceback, run the following command:  \'set debug true\'\n'

@@ -100,7 +100,7 @@ def main():
 		return 0
 
 	try:
-		engine = protocon.Engine.from_url(arguments.target_url, plugins=plugins)
+		engine = protocon.Engine.from_url(arguments.target_url, plugins=plugins, quiet=arguments.quiet)
 	except protocon.ProtoconDriverError as error:
 		protocon.print_error('Driver error: ' + error.message)
 	else:

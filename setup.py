@@ -72,11 +72,11 @@ setup(
 	long_description=long_description,
 	url='https://github.com/zeroSteiner/protocon',
 	license='BSD',
-	# these are duplicated in requirements.txt
+	# these are duplicated in Pipfile
 	install_requires=[
 		'boltons>=17.1.0',
-		'cmd2==0.9.6',
-		'crcelk>=1.3',
+		'cmd2==2.4.3',
+		'crcelk==1.3',
 		'hyperlink>=18.0.0',
 		'ipython>=6.2.1',
 		'pluginbase>=0.5',
@@ -93,10 +93,12 @@ setup(
 		'Intended Audience :: System Administrators',
 		'License :: OSI Approved :: BSD License',
 		'Operating System :: OS Independent',
-		'Programming Language :: Python :: 3.5',
 		'Programming Language :: Python :: 3.6',
 		'Programming Language :: Python :: 3.7',
 		'Programming Language :: Python :: 3.8',
+		'Programming Language :: Python :: 3.9',
+		'Programming Language :: Python :: 3.10',
+		'Programming Language :: Python :: 3.11',
 		'Topic :: Security',
 		'Topic :: Software Development :: Libraries :: Python Modules'
 	],
