@@ -219,10 +219,11 @@ class Engine(cmd2.Cmd):
 
 	argparser = argparse.ArgumentParser()
 	argparser.add_argument('data', help='the data to send to the remote end')
+	argparser.add_argument('-r', '--repeat', type=int, default=1, help='repeat the data N times')
 	@cmd2.with_argparser(argparser)
 	def do_send(self, opts):
 		"""Send the specified data."""
-		data = self.decode(opts.data)
+		data = self.decode(opts.data) * opts.repeat
 		data = self._pre_send(data)
 		self.connection.send(data)
 		self._post_send(data)
