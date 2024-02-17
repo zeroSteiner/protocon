@@ -1,5 +1,6 @@
 *.py[cod]
 __*.txt
+.github/workflows/*.jnj
 .idea/*
 build/*
 dist/*
